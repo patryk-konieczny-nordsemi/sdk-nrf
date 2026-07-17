@@ -1,0 +1,95 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+ */
+
+&cpuapp_rram {
+	/delete-node/ partitions;
+
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * The following sample defines this flash partitioning:
+		 *
+		 *   slot0_s_partition ........ 512 KB   (secure image + NSC veneers)
+		 *   tfm_storage_partition ..... 40 KB   (secure; container of:)
+		 *       tfm_its_partition ..... 16 KB
+		 *       tfm_otp_partition ......8 KB
+		 *       tfm_ps_partition ...... 16 KB
+		 *   --- Secure / Non-Secure boundary (non_secure_partition_base) ---
+		 *   slot0_ns_partition ....... 940 KB   (non-secure application)
+		 *   bt_fast_pair_partition .... 4 KB    (non-secure fast-pair storage)
+		 *   storage_partition ......... 20 KB   (non-secure storage)
+		 *
+		 * This is an example of partitioning flash for a non-MCUboot project
+		 * with TF-M enabled. Everything up to and including tfm_storage is
+		 * Secure; slot0_ns and everything above the boundary is Non-Secure.
+		 *
+		 * TO DO: Move the contents of bt_fast_pair_partition into secure
+		 *        partition and remove unused partitions.
+		 */
+
+		slot0_s_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x0 DT_SIZE_K(512)>;
+		};
+
+		tfm_storage_partition: partition@80000 {
+			compatible = "zephyr,mapped-partition";
+			label = "tfm-storage";
+			reg = <0x80000 DT_SIZE_K(40)>;
+			ranges = <0x0 0x80000 DT_SIZE_K(40)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			tfm_its_partition: partition@0 {
+				compatible = "zephyr,mapped-partition";
+				label = "tfm-its";
+				reg = <0x0 DT_SIZE_K(16)>;
+			};
+
+			tfm_otp_partition: partition@4000 {
+				compatible = "zephyr,mapped-partition";
+				label = "tfm-otp";
+				reg = <0x4000 DT_SIZE_K(8)>;
+			};
+
+			tfm_ps_partition: partition@6000 {
+				compatible = "zephyr,mapped-partition";
+				label = "tfm-ps";
+				reg = <0x6000 DT_SIZE_K(16)>;
+			};
+		};
+
+		/*
+		 * slot0_ns_partition's base address is the Secure/Non-Secure boundary
+		 * (non_secure_partition_base). It must be aligned to the TrustZone flash
+		 * region size (CONFIG_NRF_TRUSTZONE_FLASH_REGION_SIZE; 4 KB MPC granularity).
+		 * The non-secure application begins AT this boundary. Everything at or above
+		 * it is attributed Non-Secure, so no Secure content — TF-M's ITS/PS/OTP or
+		 * secure code — may be placed there.
+		 */
+
+		slot0_ns_partition: partition@8a000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0-nonsecure";
+			reg = <0x8a000 DT_SIZE_K(940)>;
+		};
+
+		bt_fast_pair_partition: partition@177000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x177000 DT_SIZE_K(4)>;
+		};
+
+		storage_partition: partition@178000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x178000 DT_SIZE_K(20)>;
+		};
+	};
+};
