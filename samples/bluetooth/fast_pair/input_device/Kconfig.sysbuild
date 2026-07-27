@@ -13,7 +13,9 @@ config BT_FAST_PAIR_MODEL_ID
 # The Anti-Spoofing Private Key is confidential and must be handled securely.
 # The following key is only used for demonstration purposes and must not be used in production.
 config BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY
-	default "Unoh+nycK/ZJ7k3dHsdcNpiP1SfOy0P/Lx5XixyYois="
+	#hex: DEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEF
+	default "3q2+796tvu/erb7v3q2+796tvu/erb7v3q2+796tvu8="
+	#default "Unoh+nycK/ZJ7k3dHsdcNpiP1SfOy0P/Lx5XixyYois="
 
 config NRF_DEFAULT_IPC_RADIO
 	default y

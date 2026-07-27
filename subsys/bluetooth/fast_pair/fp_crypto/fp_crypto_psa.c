@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <zephyr/init.h>
 #include <psa/crypto.h>
+#include <cracen_psa_kmu.h> 
 
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -191,6 +192,56 @@ int fp_crypto_aes128_ecb_decrypt(uint8_t *out, const uint8_t *in, const uint8_t 
 	return fp_crypto_aes128_ecb_crypt(out, in, k, false);
 }
 
+/* Uncompressed secp256r1 public key: 0x04 || X(32) || Y(32) = 65 bytes. */
+#define FP_TEST_ECC_PUB_KEY_LEN \
+	PSA_EXPORT_PUBLIC_KEY_OUTPUT_SIZE(PSA_KEY_TYPE_ECC_PUBLIC_KEY(PSA_ECC_FAMILY_SECP_R1), 256)
+
+static void test_provision_keys(psa_key_id_t key_reference)
+{
+	/* The 256-bit anti-spoofing key is a secp256r1 key pair, so an AES-style
+	 * cipher comparison does not apply and the private scalar cannot be read
+	 * out of the KMU. Instead, export the public key from both handles: the
+	 * public point is uniquely and deterministically derived from the private
+	 * scalar, so identical public keys prove identical key material.
+	 */
+	uint8_t pub_reference[FP_TEST_ECC_PUB_KEY_LEN];
+	uint8_t pub_test[FP_TEST_ECC_PUB_KEY_LEN];
+	size_t len_reference = 0;
+	size_t len_test = 0;
+	psa_status_t status;
+
+	/* Load the provisioned key by reference from KMU slot 170. */
+	LOG_INF("loading test key from KMU");
+	psa_key_id_t key_test = PSA_KEY_HANDLE_FROM_CRACEN_KMU_SLOT(
+		CRACEN_KMU_KEY_USAGE_SCHEME_RAW,
+		170
+	);
+
+	status = psa_export_public_key(key_reference, pub_reference, sizeof(pub_reference),&len_reference);
+	if (status != PSA_SUCCESS) {
+		LOG_ERR("Reference key public export failed (err: %d)", status);
+		return;
+	} else {
+		LOG_INF("Reference key public export success");
+	}
+
+	status = psa_export_public_key(key_test, pub_test, sizeof(pub_test), &len_test);
+	if (status != PSA_SUCCESS) {
+		LOG_ERR("KMU key (slot 170) public export failed (err: %d)", status);
+		return;
+	} else {
+		LOG_INF("KMU key public export success");
+	}
+
+	if ((len_reference == len_test) && (memcmp(pub_reference, pub_test, len_reference) == 0)) {
+		LOG_INF("MATCH: KMU key (slot 170) public key equals the reference key");
+	} else {
+		LOG_ERR("MISMATCH: KMU key (slot 170) public key differs from the reference key");
+		LOG_HEXDUMP_INF(pub_reference, len_reference, "reference:");
+		LOG_HEXDUMP_INF(pub_test, len_test, "provisioned:");
+	}
+}
+
 static psa_key_id_t import_ecdh_priv_key(const uint8_t *data)
 {
 	static const size_t len = 32;
@@ -213,7 +264,16 @@ static psa_key_id_t import_ecdh_priv_key(const uint8_t *data)
 		key_id = PSA_KEY_ID_NULL;
 	}
 
-	return key_id;
+	// call test function for provisioning key comaprison
+	test_provision_keys(key_id);
+
+	psa_key_id_t kmu_key = PSA_KEY_HANDLE_FROM_CRACEN_KMU_SLOT(
+		CRACEN_KMU_KEY_USAGE_SCHEME_RAW,
+		170
+	);
+
+	return kmu_key;
+	//return key_id;
 }
 
 int fp_crypto_psa_ecdh_shared_secret(uint8_t *secret_key, const uint8_t *public_key,
