@@ -7,6 +7,14 @@
 config PARTITION_MANAGER
 	default n
 
+# Fast Pair credentials - single source of truth.
+#
+# Secure (non-/ns) build: these feed the legacy hex-based Fast Pair provisioning
+#   (SB_CONFIG_BT_FAST_PAIR_PROV_DATA -> fp_provisioning_data.hex), exactly as
+#   the upstream sample does.
+# Non-secure (/ns) build: the legacy hex path is disabled (see BT_FAST_PAIR_PROV_DATA
+#   below) and these same values are handed to the runtime PSA provisioner image
+#   instead (see sysbuild.cmake), so they can be provisioned with the PSA API.
 config BT_FAST_PAIR_MODEL_ID
 	default 0x2A410B
 
@@ -15,7 +23,24 @@ config BT_FAST_PAIR_MODEL_ID
 config BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY
 	default "Unoh+nycK/ZJ7k3dHsdcNpiP1SfOy0P/Lx5XixyYois="
 
+# On /ns builds the runtime PSA provisioner replaces the legacy provisioning-data
+# hex, so do not generate or flash it there. On secure builds this falls through
+# to the upstream default (y), keeping the standard behavior.
+config BT_FAST_PAIR_PROV_DATA
+	bool
+	default n if BOARD_IS_NON_SECURE
+
 config NRF_DEFAULT_IPC_RADIO
 	default y
+
+config PROVISIONER_IMAGE
+	bool "Build the runtime PSA provisioner image"
+	default y if BOARD_IS_NON_SECURE
+	help
+	  Build the provisioner application as a separate sysbuild domain.
+	  It is built as BUILD_ONLY, so it is not flashed by the default
+	  `west flash`. Flash it explicitly with `west flash --domain provisioner`
+	  before flashing the input_device application. Only relevant for /ns
+	  (TF-M) builds that use runtime PSA provisioning.
 
 source "share/sysbuild/Kconfig"

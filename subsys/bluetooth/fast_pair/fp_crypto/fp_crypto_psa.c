@@ -8,6 +8,8 @@
 #include <zephyr/init.h>
 #include <psa/crypto.h>
 
+#include <cracen_psa_kmu.h> 
+
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(fp_crypto, CONFIG_FP_CRYPTO_LOG_LEVEL);
@@ -122,7 +124,7 @@ static psa_key_id_t import_aes128_key(const uint8_t *data)
 		LOG_ERR("psa_import_key failed (err: %d)", status);
 		key_id = PSA_KEY_ID_NULL;
 	}
-
+	
 	return key_id;
 }
 
@@ -193,27 +195,13 @@ int fp_crypto_aes128_ecb_decrypt(uint8_t *out, const uint8_t *in, const uint8_t 
 
 static psa_key_id_t import_ecdh_priv_key(const uint8_t *data)
 {
-	static const size_t len = 32;
+	/* The Anti-Spoofing private key resides persistently in the CRACEN KMU.
+	 * Reference it by slot handle instead of importing key material into a
+	 * volatile RAM slot (importing on every call would leak PSA key slots).
+	 */
+	ARG_UNUSED(data);
 
-	psa_status_t status;
-	psa_key_id_t key_id = PSA_KEY_ID_NULL;
-	psa_key_attributes_t key_attr = PSA_KEY_ATTRIBUTES_INIT;
-
-	psa_set_key_usage_flags(&key_attr, PSA_KEY_USAGE_DERIVE);
-	psa_set_key_lifetime(&key_attr, PSA_KEY_LIFETIME_VOLATILE);
-	psa_set_key_algorithm(&key_attr, PSA_ALG_ECDH);
-	psa_set_key_type(&key_attr, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
-	psa_set_key_bits(&key_attr, len * CHAR_BIT);
-
-	status = psa_import_key(&key_attr, data, len, &key_id);
-	psa_reset_key_attributes(&key_attr);
-
-	if (status != PSA_SUCCESS) {
-		LOG_ERR("psa_import_key failed (err: %d)", status);
-		key_id = PSA_KEY_ID_NULL;
-	}
-
-	return key_id;
+	return PSA_KEY_HANDLE_FROM_CRACEN_KMU_SLOT(CRACEN_KMU_KEY_USAGE_SCHEME_RAW, 170);
 }
 
 int fp_crypto_psa_ecdh_shared_secret(uint8_t *secret_key, const uint8_t *public_key,
@@ -263,11 +251,20 @@ int fp_crypto_ecdh_shared_secret(uint8_t *secret_key, const uint8_t *public_key,
 
 	err = fp_crypto_psa_ecdh_shared_secret(secret_key, public_key, priv_key_id);
 
-	status = psa_destroy_key(priv_key_id);
-	if (status != PSA_SUCCESS) {
-		LOG_ERR("psa_destroy_key failed (err: %d)", status);
-		/* Overwrite error code to forward information about psa_destroy_key failure. */
-		err = -ECANCELED;
+	/* The Anti-Spoofing private key resides persistently in the CRACEN KMU and
+	 * must NOT be destroyed after use - doing so invalidates the slot and every
+	 * subsequent Key-based Pairing fails with PSA_ERROR_INVALID_HANDLE (-136).
+	 * Only destroy volatile keys imported into RAM.
+	 */
+	if (priv_key_id != PSA_KEY_HANDLE_FROM_CRACEN_KMU_SLOT(CRACEN_KMU_KEY_USAGE_SCHEME_RAW, 170)) {
+		status = psa_destroy_key(priv_key_id);
+		if (status != PSA_SUCCESS) {
+			LOG_ERR("psa_destroy_key failed (err: %d)", status);
+			/* Overwrite error code to forward information about psa_destroy_key
+			 * failure.
+			 */
+			err = -ECANCELED;
+		}
 	}
 
 	return err;
