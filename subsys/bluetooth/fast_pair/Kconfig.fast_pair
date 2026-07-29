@@ -147,6 +147,43 @@ config BT_FAST_PAIR_REGISTRATION_DATA_INIT_PRIORITY
 	  This module should be initialized before all other Fast Pair modules to avoid using
 	  Fast Pair subsystem when the Fast Pair provisioning data is not configured properly.
 
+config BT_FAST_PAIR_PROVISION
+	bool "Provision Fast Pair data into KMU and Protected Storage [EXPERIMENTAL]"
+	depends on BT_FAST_PAIR_REGISTRATION_DATA
+	depends on BT_FAST_PAIR_CRYPTO_PSA
+	depends on BUILD_WITH_TFM
+	select EXPERIMENTAL
+	help
+	  Source the Fast Pair provisioning data from hardware-protected storage
+	  instead of the bt_fast_pair flash partition:
+	    - the Anti-Spoofing private key from a CRACEN KMU slot
+	      (see BT_FAST_PAIR_KMU_SLOT),
+	    - the Model ID from PSA Protected Storage
+	      (see BT_FAST_PAIR_PS_ID).
+	  On the first boot the data is migrated ("provisioned") from the flash
+	  partition into KMU/Protected Storage and the partition is erased so the
+	  Anti-Spoofing private key no longer resides in plaintext.
+	  This feature is only supported on the non-secure (TF-M) build with the
+	  PSA crypto backend.
+
+if BT_FAST_PAIR_PROVISION
+
+config BT_FAST_PAIR_KMU_SLOT
+	int "CRACEN KMU slot for the Anti-Spoofing private key"
+	default 170
+	help
+	  KMU slot index (RAW usage scheme) that stores the 256-bit Anti-Spoofing
+	  private key. A 256-bit key occupies two consecutive KMU slots, so keep
+	  the following slot (this value + 1) free.
+
+config BT_FAST_PAIR_PS_ID
+	int "PSA Protected Storage UID for the Model ID"
+	default 1
+	help
+	  PSA Protected Storage uid used to store the Fast Pair Model ID.
+
+endif # BT_FAST_PAIR_PROVISION
+
 endif # BT_FAST_PAIR_REGISTRATION_DATA
 
 config BT_FAST_PAIR_BATTERY
