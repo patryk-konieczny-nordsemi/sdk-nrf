@@ -8,7 +8,9 @@
 #include <zephyr/init.h>
 #include <psa/crypto.h>
 
-#include <cracen_psa_kmu.h> 
+#if defined(CONFIG_BT_FAST_PAIR_PROVISION)
+#include <cracen_psa_kmu.h>
+#endif
 
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -124,7 +126,7 @@ static psa_key_id_t import_aes128_key(const uint8_t *data)
 		LOG_ERR("psa_import_key failed (err: %d)", status);
 		key_id = PSA_KEY_ID_NULL;
 	}
-	
+
 	return key_id;
 }
 
@@ -193,19 +195,36 @@ int fp_crypto_aes128_ecb_decrypt(uint8_t *out, const uint8_t *in, const uint8_t 
 	return fp_crypto_aes128_ecb_crypt(out, in, k, false);
 }
 
+#if !defined(CONFIG_BT_FAST_PAIR_PROVISION)
 static psa_key_id_t import_ecdh_priv_key(const uint8_t *data)
 {
-	/* The Anti-Spoofing private key resides persistently in the CRACEN KMU.
-	 * Reference it by slot handle instead of importing key material into a
-	 * volatile RAM slot (importing on every call would leak PSA key slots).
-	 */
-	ARG_UNUSED(data);
+	/* SECP-R1 256-bit private key (256 bits = 32 bytes). */
+	static const size_t len = FP_CRYPTO_ECDH_SHARED_KEY_LEN;
 
-	return PSA_KEY_HANDLE_FROM_CRACEN_KMU_SLOT(CRACEN_KMU_KEY_USAGE_SCHEME_RAW, 170);
+	psa_status_t status;
+	psa_key_id_t key_id = PSA_KEY_ID_NULL;
+	psa_key_attributes_t key_attr = PSA_KEY_ATTRIBUTES_INIT;
+
+	psa_set_key_usage_flags(&key_attr, PSA_KEY_USAGE_DERIVE);
+	psa_set_key_lifetime(&key_attr, PSA_KEY_LIFETIME_VOLATILE);
+	psa_set_key_algorithm(&key_attr, PSA_ALG_ECDH);
+	psa_set_key_type(&key_attr, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
+	psa_set_key_bits(&key_attr, len * CHAR_BIT);
+
+	status = psa_import_key(&key_attr, data, len, &key_id);
+	psa_reset_key_attributes(&key_attr);
+
+	if (status != PSA_SUCCESS) {
+		LOG_ERR("psa_import_key failed (err: %d)", status);
+		key_id = PSA_KEY_ID_NULL;
+	}
+
+	return key_id;
 }
+#endif /* !CONFIG_BT_FAST_PAIR_PROVISION */
 
-int fp_crypto_psa_ecdh_shared_secret(uint8_t *secret_key, const uint8_t *public_key,
-				     psa_key_id_t priv_key_id)
+static int fp_crypto_psa_ecdh_shared_secret(uint8_t *secret_key, const uint8_t *public_key,
+					    psa_key_id_t priv_key_id)
 {
 	/* Marker of the uncompressed binary format for a point on an elliptic curve. */
 	static const uint8_t uncompressed_format_marker = 0x04;
@@ -238,33 +257,41 @@ int fp_crypto_psa_ecdh_shared_secret(uint8_t *secret_key, const uint8_t *public_
 int fp_crypto_ecdh_shared_secret(uint8_t *secret_key, const uint8_t *public_key,
 				 const uint8_t *private_key)
 {
-
 	int err = 0;
 	psa_key_id_t priv_key_id;
 	psa_status_t status;
 
+#if defined(CONFIG_BT_FAST_PAIR_PROVISION)
+	/* The Anti-Spoofing private key resides in the KMU. It is referenced by its
+	 * key id and never imported in plaintext, so the raw private_key buffer is
+	 * unused in this configuration (see fp_registration_data_provision.c).
+	 */
+	ARG_UNUSED(private_key);
+	priv_key_id = PSA_KEY_ID_FROM_CRACEN_KMU_SLOT(CRACEN_KMU_KEY_USAGE_SCHEME_RAW,
+						      CONFIG_BT_FAST_PAIR_KMU_SLOT);
+#else
 	priv_key_id = import_ecdh_priv_key(private_key);
+#endif
 	if (priv_key_id == PSA_KEY_ID_NULL) {
-		LOG_ERR("import_ecdh_shared_secret_key failed");
+		LOG_ERR("ECDH private key setup failed");
 		return -EIO;
 	}
 
 	err = fp_crypto_psa_ecdh_shared_secret(secret_key, public_key, priv_key_id);
 
-	/* The Anti-Spoofing private key resides persistently in the CRACEN KMU and
-	 * must NOT be destroyed after use - doing so invalidates the slot and every
-	 * subsequent Key-based Pairing fails with PSA_ERROR_INVALID_HANDLE (-136).
-	 * Only destroy volatile keys imported into RAM.
-	 */
-	if (priv_key_id != PSA_KEY_HANDLE_FROM_CRACEN_KMU_SLOT(CRACEN_KMU_KEY_USAGE_SCHEME_RAW, 170)) {
-		status = psa_destroy_key(priv_key_id);
-		if (status != PSA_SUCCESS) {
-			LOG_ERR("psa_destroy_key failed (err: %d)", status);
-			/* Overwrite error code to forward information about psa_destroy_key
-			 * failure.
-			 */
-			err = -ECANCELED;
-		}
+#if defined(CONFIG_BT_FAST_PAIR_PROVISION)
+	/* The KMU key is persistent - only drop its volatile copy, do not destroy it. */
+	status = psa_purge_key(priv_key_id);
+#else
+	status = psa_destroy_key(priv_key_id);
+#endif
+	if (status != PSA_SUCCESS) {
+		LOG_ERR("%s failed (err: %d)",
+			IS_ENABLED(CONFIG_BT_FAST_PAIR_PROVISION) ? "psa_purge_key" :
+								    "psa_destroy_key",
+			status);
+		/* Overwrite error code to forward information about the key cleanup failure. */
+		err = -ECANCELED;
 	}
 
 	return err;

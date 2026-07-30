@@ -7,14 +7,23 @@
 config PARTITION_MANAGER
 	default n
 
-# Fast Pair credentials - single source of truth.
+# Fast Pair credentials and storage locations - THE single source of truth.
 #
-# Secure (non-/ns) build: these feed the legacy hex-based Fast Pair provisioning
-#   (SB_CONFIG_BT_FAST_PAIR_PROV_DATA -> fp_provisioning_data.hex), exactly as
-#   the upstream sample does.
+# This block only SETS the values. The options themselves are defined and
+# documented elsewhere:
+#   - BT_FAST_PAIR_MODEL_ID / _ANTI_SPOOFING_PRIVATE_KEY: nrf/sysbuild/Kconfig.bt_fast_pair
+#   - the KMU slot / Protected Storage uid: provision/Kconfig (FP_PROVISION_*)
+#     and Kconfig.fast_pair (BT_FAST_PAIR_KMU_SLOT / _PS_ID).
+# sysbuild.cmake fans these values out to both the input_device application and
+# the provisioner image, so they always agree.
+#
+# Secure (non-/ns) build: the Model ID and key feed the legacy hex-based Fast Pair
+#   provisioning (SB_CONFIG_BT_FAST_PAIR_PROV_DATA -> fp_provisioning_data.hex),
+#   exactly as the upstream sample does.
 # Non-secure (/ns) build: the legacy hex path is disabled (see BT_FAST_PAIR_PROV_DATA
 #   below) and these same values are handed to the runtime PSA provisioner image
-#   instead (see sysbuild.cmake), so they can be provisioned with the PSA API.
+#   instead, so they can be provisioned with the PSA API.
+
 config BT_FAST_PAIR_MODEL_ID
 	default 0x2A410B
 
@@ -22,6 +31,17 @@ config BT_FAST_PAIR_MODEL_ID
 # The following key is only used for demonstration purposes and must not be used in production.
 config BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY
 	default "Unoh+nycK/ZJ7k3dHsdcNpiP1SfOy0P/Lx5XixyYois="
+
+# Storage locations for the runtime PSA provisioning (/ns builds). These SB
+# symbols are the source of truth for the values; their meaning is documented in
+# provision/Kconfig and Kconfig.fast_pair.
+config BT_FAST_PAIR_KMU_SLOT
+	int "CRACEN KMU slot for the Anti-Spoofing private key"
+	default 30
+
+config BT_FAST_PAIR_PS_ID
+	int "PSA Protected Storage UID for the Model ID"
+	default 2000
 
 # On /ns builds the runtime PSA provisioner replaces the legacy provisioning-data
 # hex, so do not generate or flash it there. On secure builds this falls through

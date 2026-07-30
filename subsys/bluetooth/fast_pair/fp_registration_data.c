@@ -8,7 +8,6 @@
 #include <string.h>
 #include <zephyr/device.h>
 #include <zephyr/storage/flash_map.h>
-#include <psa/protected_storage.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(fast_pair, CONFIG_BT_FAST_PAIR_LOG_LEVEL);
@@ -23,9 +22,9 @@ LOG_MODULE_DECLARE(fast_pair, CONFIG_BT_FAST_PAIR_LOG_LEVEL);
 #define FP_PARTITION_ID		PM_BT_FAST_PAIR_ID
 #define FP_PARTITION_SIZE	PM_BT_FAST_PAIR_SIZE
 #else
-// BUILD_ASSERT(PARTITION_EXISTS(bt_fast_pair_partition));
-// #define FP_PARTITION_ID		PARTITION_ID(bt_fast_pair_partition)
-// #define FP_PARTITION_SIZE	PARTITION_SIZE(bt_fast_pair_partition)
+BUILD_ASSERT(PARTITION_EXISTS(bt_fast_pair_partition));
+#define FP_PARTITION_ID		PARTITION_ID(bt_fast_pair_partition)
+#define FP_PARTITION_SIZE	PARTITION_SIZE(bt_fast_pair_partition)
 #endif
 
 static const uint8_t fp_magic[] = {0xFA, 0x57, 0xFA, 0x57};
@@ -47,7 +46,7 @@ static const uint8_t fp_magic[] = {0xFA, 0x57, 0xFA, 0x57};
 #define FP_DATA_SIZE		 (FP_END_OFF - FP_DATA_START)
 #define FP_OFFSET_TO_DATA_IDX(_offset) ((_offset) - FP_DATA_START)
 
-// BUILD_ASSERT(FP_END_OFF <= FP_PARTITION_SIZE, "Fast Pair registration data partition is too small");
+BUILD_ASSERT(FP_END_OFF <= FP_PARTITION_SIZE, "Fast Pair registration data partition is too small");
 
 static bool is_enabled;
 
@@ -63,47 +62,32 @@ int fp_reg_data_get_model_id(uint8_t *buf, size_t size)
 		return -EINVAL;
 	}
 
-	// err = flash_area_open(FP_PARTITION_ID, &fa);
-	// if (!err) {
-	// 	err = flash_area_read(fa, FP_MODEL_ID_OFF, buf, FP_REG_DATA_MODEL_ID_LEN);
-	// 	flash_area_close(fa);
-	// }
+	err = flash_area_open(FP_PARTITION_ID, &fa);
+	if (!err) {
+		err = flash_area_read(fa, FP_MODEL_ID_OFF, buf, FP_REG_DATA_MODEL_ID_LEN);
+		flash_area_close(fa);
+	}
 
-	psa_status_t status;
-	size_t bytes_read;
-
-	status = psa_ps_get(
-        0x00000001,          /* uid */
-        0,                         /* offset */
-        size,            /* number of bytes to read */
-        buf,                    /* output buffer */
-        &bytes_read);              /* actual bytes read */
-
-    if (status == PSA_SUCCESS) {
-        LOG_INF("Device ID: Loaded %d bytes", bytes_read);
-		LOG_HEXDUMP_INF(buf, bytes_read,"Loaded Device ID: ");
-    }
-
-	return status;
+	return err;
 }
 
 int fp_get_anti_spoofing_priv_key(uint8_t *buf, size_t size)
 {
 	__ASSERT_NO_MSG(bt_fast_pair_is_ready());
 
-	int err = 0;
+	int err;
 	const struct flash_area *fa;
 
 	if (size < FP_REG_DATA_ANTI_SPOOFING_PRIV_KEY_LEN) {
 		return -EINVAL;
 	}
 
-	// err = flash_area_open(FP_PARTITION_ID, &fa);
-	// if (!err) {
-	// 	err = flash_area_read(fa, FP_ANTI_SPOOFING_KEY_OFF, buf,
-	// 			      FP_REG_DATA_ANTI_SPOOFING_PRIV_KEY_LEN);
-	// 	flash_area_close(fa);
-	// }
+	err = flash_area_open(FP_PARTITION_ID, &fa);
+	if (!err) {
+		err = flash_area_read(fa, FP_ANTI_SPOOFING_KEY_OFF, buf,
+				      FP_REG_DATA_ANTI_SPOOFING_PRIV_KEY_LEN);
+		flash_area_close(fa);
+	}
 
 	return err;
 }
@@ -140,26 +124,26 @@ static int fp_registration_data_validate(void)
 	uint8_t data[FP_DATA_SIZE];
 	const struct flash_area *fa = NULL;
 
-	// err = flash_area_open(FP_PARTITION_ID, &fa);
-	// if (!err) {
-	// 	err = flash_area_read(fa, FP_DATA_START, data, FP_DATA_SIZE);
-	// }
+	err = flash_area_open(FP_PARTITION_ID, &fa);
+	if (!err) {
+		err = flash_area_read(fa, FP_DATA_START, data, FP_DATA_SIZE);
+	}
 
-	// if (!err) {
-	// 	err = validate_fp_magic(&data[FP_OFFSET_TO_DATA_IDX(FP_MAGIC_OFF)]);
-	// }
+	if (!err) {
+		err = validate_fp_magic(&data[FP_OFFSET_TO_DATA_IDX(FP_MAGIC_OFF)]);
+	}
 
-	// if (!err) {
-	// 	err = validate_fp_hash(data, &data[FP_OFFSET_TO_DATA_IDX(FP_HASH_OFF)]);
-	// }
+	if (!err) {
+		err = validate_fp_hash(data, &data[FP_OFFSET_TO_DATA_IDX(FP_HASH_OFF)]);
+	}
 
-	// if (fa) {
-	// 	flash_area_close(fa);
-	// }
+	if (fa) {
+		flash_area_close(fa);
+	}
 
-	// if (err) {
-	// 	LOG_ERR("Invalid content of the Fast Pair partition");
-	// }
+	if (err) {
+		LOG_ERR("Invalid content of the Fast Pair partition");
+	}
 
 	return err;
 }
@@ -175,7 +159,7 @@ static int fp_reg_data_init(void)
 
 	err = fp_registration_data_validate();
 	if (err) {
-		// return err;
+		return err;
 	}
 
 	is_enabled = true;

@@ -1,0 +1,58 @@
+#
+# Copyright (c) 2026 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+#
+
+# Fast Pair provisioner image.
+#
+# This image is provided by the Fast Pair subsystem and is meant to be built as
+# a separate sysbuild domain of a Fast Pair application (see the input_device
+# sample sysbuild.cmake). It provisions the Fast Pair registration data into
+# hardware-protected storage:
+#   - the Anti-Spoofing private key into a CRACEN KMU slot,
+#   - the Model ID into PSA Protected Storage.
+# The application then sources the data from there at runtime (see
+# fp_registration_data_provision.c).
+#
+# This file DEFINES the provisioner configuration options and their
+# descriptions. It does NOT set their values: the demo credentials and storage
+# locations are set once in the application's Kconfig.sysbuild (the single source
+# of truth) and injected here by sysbuild via set_config_* in sysbuild.cmake.
+# The defaults below are only inert placeholders for a standalone build.
+
+mainmenu "Fast Pair provisioner"
+
+config FP_PROVISION_MODEL_ID
+	hex "Fast Pair Model ID"
+	default 0x0
+	help
+	  Fast Pair Model ID written to PSA Protected Storage. Obtained during
+	  device model registration in the Google Nearby Console. A 24-bit value
+	  (0x000000 - 0xFFFFFF).
+
+config FP_PROVISION_ANTI_SPOOFING_KEY
+	string "Fast Pair Anti-Spoofing Private Key (base64)"
+	default ""
+	help
+	  Base64-encoded Anti-Spoofing Private Key imported into the CRACEN KMU.
+	  Confidential. It is decoded at build time (see fp_provision_key_gen.py)
+	  so no base64 decoding is performed on the device.
+
+config FP_PROVISION_KMU_SLOT
+	int "CRACEN KMU slot for the Anti-Spoofing private key"
+	default 0
+	help
+	  KMU slot index (RAW usage scheme) that stores the 256-bit Anti-Spoofing
+	  private key. A 256-bit key occupies two consecutive KMU slots, so keep
+	  the following slot (this value + 1) free. Must match
+	  CONFIG_BT_FAST_PAIR_KMU_SLOT of the application image.
+
+config FP_PROVISION_PS_ID
+	int "PSA Protected Storage UID for the Model ID"
+	default 0
+	help
+	  PSA Protected Storage uid used to store the Fast Pair Model ID. Must
+	  match CONFIG_BT_FAST_PAIR_PS_ID of the application image.
+
+source "Kconfig.zephyr"
