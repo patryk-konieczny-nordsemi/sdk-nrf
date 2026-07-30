@@ -314,6 +314,28 @@ static int fp_provision(void)
 	return err;
 }
 
+/* Public entry point: migrate the Fast Pair data into KMU/Protected Storage (if
+ * not done yet) and erase the plaintext copy from the flash partition. Intended
+ * to be called once from the application before enabling Fast Pair.
+ */
+int bt_fast_pair_provision(void)
+{
+	int err = fp_provision();
+
+	if (err) {
+		return err;
+	}
+
+	err = prov_flash_erase();
+	if (err) {
+		LOG_ERR("Failed to erase the Fast Pair flash partition (err %d)", err);
+		return err;
+	}
+	LOG_INF("Fast Pair flash partition erased");
+
+	return 0;
+}
+
 /* ------------------------------------------------------------------------- *
  *  Fast Pair registration data API (KMU / Protected Storage backed)
  * ------------------------------------------------------------------------- */
@@ -365,17 +387,14 @@ static int fp_reg_data_init(void)
 		return 0;
 	}
 
-	int err_prov = fp_provision();
-
-	int err = prov_flash_erase();
-	if (err) {
-		LOG_ERR("Failed to erase the Fast Pair flash partition (err %d)", err);
-	} else {
-		LOG_INF("Fast Pair flash partition erased");
-	}
-
-	if (err_prov) {
-		return err;
+	/* Provisioning (migration + flash erase) is performed by bt_fast_pair_provision(),
+	 * which the application must call before enabling Fast Pair. Here we only verify
+	 * that the data is present and usable in KMU/Protected Storage.
+	 */
+	if (!prov_data_present() || !prov_data_valid()) {
+		LOG_ERR("Fast Pair data not provisioned - call bt_fast_pair_provision() "
+			"before bt_fast_pair_enable()");
+		return -EINVAL;
 	}
 
 	is_enabled = true;

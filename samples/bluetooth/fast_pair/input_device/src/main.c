@@ -518,6 +518,18 @@ int main(void)
 
 	LOG_INF("Starting Bluetooth Fast Pair input device sample");
 
+#if defined(CONFIG_BT_FAST_PAIR_PROVISION)
+	/* Provision the Fast Pair data into KMU/Protected Storage (and erase the flash
+	 * partition) once, before the Bluetooth stack is enabled.
+	 */
+	err = bt_fast_pair_provision();
+	if (err) {
+		LOG_ERR("Fast Pair provisioning failed (err %d)", err);
+		k_panic();
+		return 0;
+	}
+#endif /* CONFIG_BT_FAST_PAIR_PROVISION */
+
 	/* Switch to the cooperative thread context before interaction
 	 * with the Fast Pair API.
 	 */

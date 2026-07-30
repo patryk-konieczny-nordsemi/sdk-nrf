@@ -213,6 +213,29 @@ int bt_fast_pair_disable(void);
  */
 bool bt_fast_pair_is_ready(void);
 
+#if defined(CONFIG_BT_FAST_PAIR_PROVISION) || defined(__DOXYGEN__)
+/** Provision the Fast Pair data into hardware-protected storage.
+ *
+ * Available only when @kconfig{CONFIG_BT_FAST_PAIR_PROVISION} is enabled.
+ *
+ * On the first call this migrates the Fast Pair provisioning data from the
+ * bt_fast_pair flash partition into the CRACEN KMU (Anti-Spoofing private key)
+ * and PSA Protected Storage (Model ID), and then erases the flash partition.
+ * The operation is idempotent: on subsequent boots, when the data already
+ * resides in KMU/Protected Storage, it only verifies the data and ensures the
+ * flash partition is erased.
+ *
+ * This function must be called once, before enabling Fast Pair with
+ * @ref bt_fast_pair_enable. It performs blocking flash and PSA operations and
+ * should be called before the Bluetooth stack is enabled (radio inactive).
+ *
+ * @return 0 if the operation was successful. Otherwise, a (negative) error code
+ *         is returned (for example -ENODATA when there is no valid data to
+ *         provision, or -EINVAL when the provisioned data is invalid).
+ */
+int bt_fast_pair_provision(void);
+#endif /* CONFIG_BT_FAST_PAIR_PROVISION */
+
 /** Get Fast Pair advertising data buffer size.
  *
  * This function can only be called if Fast Pair was previously enabled with the
