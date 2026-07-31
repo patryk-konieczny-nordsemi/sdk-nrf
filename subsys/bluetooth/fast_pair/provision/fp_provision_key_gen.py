@@ -57,7 +57,7 @@ def render_header(key):
         f"#define FP_PROVISION_ANTI_SPOOFING_KEY_LEN {KEY_LEN}U",
         "",
         "static const uint8_t "
-        "fp_provision_anti_spoofing_key[FP_PROVISION_ANTI_SPOOFING_KEY_LEN] = {",
+        "fp_provision_anti_spoofing_key[FP_PROVISION_ANTI_SPOOFING_KEY_LEN] __aligned(16) = {",
     ]
 
     for i in range(0, KEY_LEN, 8):

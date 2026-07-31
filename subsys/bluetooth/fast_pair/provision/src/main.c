@@ -11,6 +11,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/flash.h>
 
 #include <psa/crypto.h>
 #include <psa/crypto_extra.h>
@@ -36,6 +37,14 @@ LOG_MODULE_REGISTER(fp_provision, LOG_LEVEL_INF);
 
 /* Protected Storage uid holding the Model ID. */
 #define FP_PS_MODEL_ID_UID	((psa_storage_uid_t)CONFIG_FP_PROVISION_PS_ID)
+
+static int scrub_anti_spoofing_key(void)
+{
+    const struct device *rram = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
+    uint8_t zeros[FP_PROVISION_ANTI_SPOOFING_KEY_LEN] = {0};   /* 32, a multiple of 16 */
+    off_t off = (off_t)(uintptr_t)fp_provision_anti_spoofing_key; /* RRAM base = 0x0 */
+    return flash_write(rram, off, zeros, sizeof(zeros));
+}
 
 static int provision_init(void)
 {
@@ -73,6 +82,12 @@ static int provision_anti_spoofing_key(void)
 	}
 
 	LOG_INF("Anti-Spoofing key provisioned to KMU slot %d", CONFIG_FP_PROVISION_KMU_SLOT);
+
+	int err = scrub_anti_spoofing_key();
+	if (err != 0) {
+		LOG_ERR("NVM memory erase failed (err %d)", err);
+		return err;
+	}
 
 	return 0;
 }

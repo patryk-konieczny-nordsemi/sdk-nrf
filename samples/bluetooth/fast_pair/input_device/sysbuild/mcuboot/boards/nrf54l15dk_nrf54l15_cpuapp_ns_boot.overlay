@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+ */
+
+/*
+ * Reuse the exact same flash partition map as the application image (single
+ * source of truth), then boot from the MCUboot partition. Sharing the map
+ * guarantees MCUboot and the application agree on slot0/slot1 and on the TF-M
+ * ITS/PS/OTP secure-storage addresses.
+ */
+#include "../../../boards/nrf54l15dk_nrf54l15_cpuapp_ns_boot.overlay"
+
+/ {
+	chosen {
+		zephyr,code-partition = &boot_partition;
+	};
+};
+
+/*
+ * MCUboot runs without a system clock (see prj.conf), so the MX25 deep-power-down
+ * timing path (which calls k_uptime_ticks()) cannot link. Drop the DPD
+ * properties for the MCUboot image only; the application image keeps them.
+ */
+&mx25r64 {
+	/delete-property/ has-dpd;
+	/delete-property/ t-enter-dpd;
+	/delete-property/ t-exit-dpd;
+};

@@ -1,0 +1,130 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+ */
+
+/*
+ * Flash layout for the MCUboot-enabled /ns (TF-M) build ("build_ns_boot").
+ *
+ * Slot sizes are derived from the actual footprint of the standard TF-M /ns
+ * build (secure image ~85 KB, non-secure application ~222 KB) with headroom for
+ * DFU growth and debug builds, rounded to keep the Secure/Non-Secure boundary
+ * aligned to the 4 KB TrustZone flash region granularity:
+ *
+ *   boot_partition ............ 64 KB   MCUboot (secure, immutable)
+ *   tfm_storage_partition ..... 40 KB   secure (ITS 16 / OTP 8 / PS 16)
+ *   slot0_partition .......... 448 KB   MCUboot primary image (image-0), of which
+ *       slot0_s_partition .... 128 KB       secure image (tfm_s + NSC veneers)
+ *       --- Secure / Non-Secure boundary @ 0x3a000 (232 KB) ---
+ *       slot0_ns_partition ... 320 KB       non-secure application
+ *   storage_partition ......... 20 KB   non-secure settings storage
+ *
+ * The MCUboot secondary slot (image-1, same 448 KB) is placed in the external
+ * SPI-NOR flash (see &mx25r64 below), so only ONE copy of the ~448 KB image
+ * occupies internal RRAM. This is what makes MCUboot + TF-M fit on the nRF54L15
+ * (two internal slots would not).
+ */
+
+/ {
+	chosen {
+		zephyr,code-partition = &slot0_ns_partition;
+	};
+};
+
+&cpuapp_rram {
+	/delete-node/ partitions;
+
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "mcuboot";
+			reg = <0x0 DT_SIZE_K(64)>;
+		};
+
+		tfm_storage_partition: partition@10000 {
+			compatible = "zephyr,mapped-partition";
+			label = "tfm-storage";
+			reg = <0x10000 DT_SIZE_K(40)>;
+			ranges = <0x0 0x10000 DT_SIZE_K(40)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			tfm_its_partition: partition@0 {
+				compatible = "zephyr,mapped-partition";
+				label = "tfm-its";
+				reg = <0x0 DT_SIZE_K(16)>;
+			};
+
+			tfm_otp_partition: partition@4000 {
+				compatible = "zephyr,mapped-partition";
+				label = "tfm-otp";
+				reg = <0x4000 DT_SIZE_K(8)>;
+			};
+
+			tfm_ps_partition: partition@6000 {
+				compatible = "zephyr,mapped-partition";
+				label = "tfm-ps";
+				reg = <0x6000 DT_SIZE_K(16)>;
+			};
+		};
+
+		slot0_partition: partition@1a000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x1a000 DT_SIZE_K(448)>;
+			ranges = <0x0 0x1a000 DT_SIZE_K(448)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			slot0_s_partition: partition@0 {
+				compatible = "zephyr,mapped-partition";
+				label = "image-0-secure";
+				reg = <0x0 DT_SIZE_K(128)>;
+			};
+
+			/*
+			 * slot0_ns_partition's base address is the Secure/Non-Secure boundary
+			 * (non_secure_partition_base). It must be aligned to the TrustZone flash
+			 * region size (CONFIG_NRF_TRUSTZONE_FLASH_REGION_SIZE; 4 KB MPC granularity).
+			 * Everything at or above it is attributed Non-Secure.
+			 */
+			slot0_ns_partition: partition@20000 {
+				compatible = "zephyr,mapped-partition";
+				label = "image-0-nonsecure";
+				reg = <0x20000 DT_SIZE_K(320)>;
+			};
+		};
+
+		storage_partition: partition@8a000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x8a000 DT_SIZE_K(20)>;
+		};
+	};
+};
+
+/*
+ * MCUboot secondary slot (image-1) in the external SPI-NOR flash (MX25R6435F on
+ * &spi00). Its size equals the primary slot (slot0 = 448 KB) and is aligned to
+ * the 4 KB sector erase size of the external flash. Requires the SPI NOR driver
+ * (CONFIG_SPI, CONFIG_SPI_NOR) in both the application and the MCUboot images.
+ */
+&mx25r64 {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		slot1_partition: partition@0 {
+			label = "image-1";
+			reg = <0x0 DT_SIZE_K(448)>;
+		};
+	};
+};
