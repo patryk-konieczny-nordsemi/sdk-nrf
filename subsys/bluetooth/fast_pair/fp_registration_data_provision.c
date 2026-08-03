@@ -11,7 +11,10 @@
 #include <zephyr/sys/util.h>
 
 #include <psa/crypto.h>
+
 #include <psa/protected_storage.h>
+#include <psa/internal_trusted_storage.h>
+
 #include <cracen_psa_kmu.h>
 #include <cracen_psa_key_ids.h>
 
@@ -53,7 +56,8 @@ static bool prov_model_id_present(void)
 {
 	struct psa_storage_info_t info;
 
-	return (psa_ps_get_info(FP_PS_MODEL_ID_UID, &info) == PSA_SUCCESS);
+	// return (psa_ps_get_info(FP_PS_MODEL_ID_UID, &info) == PSA_SUCCESS);
+	return (psa_its_get_info(FP_PS_MODEL_ID_UID, &info) == PSA_SUCCESS);
 }
 
 /* Has the data been provisioned into both the KMU and Protected Storage? */
@@ -76,9 +80,12 @@ static bool prov_data_valid(void)
 		return false;
 	}
 
-	if ((psa_ps_get_info(FP_PS_MODEL_ID_UID, &info) != PSA_SUCCESS) ||
+	// if ((psa_ps_get_info(FP_PS_MODEL_ID_UID, &info) != PSA_SUCCESS) ||
+	if ((psa_its_get_info(FP_PS_MODEL_ID_UID, &info) != PSA_SUCCESS) ||
 	    (info.size != FP_REG_DATA_MODEL_ID_LEN)) {
-		LOG_ERR("Model ID in Protected Storage (uid %u) is missing or malformed",
+		// LOG_ERR("Model ID in Protected Storage (uid %u) is missing or malformed",
+		// 	(unsigned int)FP_PS_MODEL_ID_UID);
+		LOG_ERR("Model ID in Internal Trusted Storage (uid %u) is missing or malformed",
 			(unsigned int)FP_PS_MODEL_ID_UID);
 		return false;
 	}
@@ -97,9 +104,11 @@ int fp_reg_data_get_model_id(uint8_t *buf, size_t size)
 		return -EINVAL;
 	}
 
-	status = psa_ps_get(FP_PS_MODEL_ID_UID, 0, FP_REG_DATA_MODEL_ID_LEN, buf, &read_len);
+	// status = psa_ps_get(FP_PS_MODEL_ID_UID, 0, FP_REG_DATA_MODEL_ID_LEN, buf, &read_len);
+	status = psa_its_get(FP_PS_MODEL_ID_UID, 0, FP_REG_DATA_MODEL_ID_LEN, buf, &read_len);
 	if ((status != PSA_SUCCESS) || (read_len != FP_REG_DATA_MODEL_ID_LEN)) {
-		LOG_ERR("Failed to read Model ID from Protected Storage (err %d)", status);
+		// LOG_ERR("Failed to read Model ID from Protected Storage (err %d)", status);
+		LOG_ERR("Failed to read Model ID from Internal Trusted Storage (err %d)", status);
 		return -EIO;
 	}
 

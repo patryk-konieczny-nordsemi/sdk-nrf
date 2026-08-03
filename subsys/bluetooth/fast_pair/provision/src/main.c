@@ -15,7 +15,10 @@
 
 #include <psa/crypto.h>
 #include <psa/crypto_extra.h>
+
 #include <psa/protected_storage.h>
+#include <psa/internal_trusted_storage.h>
+
 #include <psa/storage_common.h>
 #include <cracen_psa_kmu.h>
 #include <cracen_psa_key_ids.h>
@@ -99,13 +102,17 @@ static int provision_model_id(void)
 
 	sys_put_be24(CONFIG_FP_PROVISION_MODEL_ID, model_id);
 
-	status = psa_ps_set(FP_PS_MODEL_ID_UID, sizeof(model_id), model_id, PSA_STORAGE_FLAG_NONE);
+	// status = psa_ps_set(FP_PS_MODEL_ID_UID, sizeof(model_id), model_id, PSA_STORAGE_FLAG_WRITE_ONCE);
+	status = psa_its_set(FP_PS_MODEL_ID_UID, sizeof(model_id), model_id, PSA_STORAGE_FLAG_WRITE_ONCE);
 	if (status != PSA_SUCCESS) {
 		LOG_ERR("Model ID provisioning failed (err %d)", status);
 		return -EIO;
 	}
 
-	LOG_INF("Model ID 0x%06x provisioned to Protected Storage (uid %u)",
+	// LOG_INF("Model ID 0x%06x provisioned to Protected Storage (uid %u)",
+	// 	CONFIG_FP_PROVISION_MODEL_ID, (unsigned int)FP_PS_MODEL_ID_UID);
+
+	LOG_INF("Model ID 0x%06x provisioned to Internal Trusted Storage (uid %u)",
 		CONFIG_FP_PROVISION_MODEL_ID, (unsigned int)FP_PS_MODEL_ID_UID);
 
 	return 0;
