@@ -6,6 +6,12 @@
 
 source "Kconfig.zephyr"
 
+# Define the FP_PROVISION_* symbols (shared with the provisioner) so that, when
+# the provisioner source is selected with FILE_SUFFIX=provisioner, sysbuild can
+# inject the Fast Pair credentials into this image. rsource resolves relative to
+# this file (source/osource would use $srctree).
+rsource "../provisioner/Kconfig.fp_provision"
+
 config SETTINGS
 	default y
 

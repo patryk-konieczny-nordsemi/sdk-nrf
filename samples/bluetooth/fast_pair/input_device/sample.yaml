@@ -31,6 +31,23 @@ tests:
       - ci_build
       - sysbuild
       - ci_samples_bluetooth
+  # MCUboot-enabled /ns build. The command-line workflow selects this by the
+  # build-directory name (build_ns_mcuboot); Twister uses its own directory, so
+  # it selects the same sysbuild configuration explicitly with SB_CONF_FILE.
+  sample.bluetooth.fast_pair.input_device.ns_mcuboot:
+    build_only: true
+    sysbuild: true
+    integration_platforms:
+      - nrf54l15dk/nrf54l15/cpuapp/ns
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp/ns
+    tags:
+      - bluetooth
+      - ci_build
+      - sysbuild
+      - ci_samples_bluetooth
+    extra_args:
+      - SB_CONF_FILE=sysbuild_mcuboot.conf
   sample.bluetooth.fast_pair.input_device.pm_legacy:
     build_only: true
     sysbuild: true

@@ -4,24 +4,7 @@
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 #
 
-# Fast Pair provisioner image.
-#
-# This image is provided by the Fast Pair subsystem and is meant to be built as
-# a separate sysbuild domain of a Fast Pair application (see the input_device
-# sample sysbuild.cmake). It provisions the Fast Pair registration data into
-# hardware-protected storage:
-#   - the Anti-Spoofing private key into a CRACEN KMU slot,
-#   - the Model ID into PSA Protected Storage.
-# The application then sources the data from there at runtime (see
-# fp_registration_data_provision.c).
-#
-# This file DEFINES the provisioner configuration options and their
-# descriptions. It does NOT set their values: the demo credentials and storage
-# locations are set once in the application's Kconfig.sysbuild (the single source
-# of truth) and injected here by sysbuild via set_config_* in sysbuild.cmake.
-# The defaults below are only inert placeholders for a standalone build.
-
-mainmenu "Fast Pair provisioner"
+menu "Fast Pair provisioner"
 
 config FP_PROVISION_MODEL_ID
 	hex "Fast Pair Model ID"
@@ -55,4 +38,4 @@ config FP_PROVISION_PS_ID
 	  PSA Protected Storage uid used to store the Fast Pair Model ID. Must
 	  match CONFIG_BT_FAST_PAIR_PS_ID of the application image.
 
-source "Kconfig.zephyr"
+endmenu

@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+ */
+
+/*
+ * Reuse the exact same flash partition map as the application image (single
+ * source of truth), then boot from the MCUboot partition. Sharing the map
+ * guarantees MCUboot and the application agree on slot0/slot1 and on the TF-M
+ * ITS/PS/OTP secure-storage addresses.
+ */
+#include "../../../boards/nrf54l15dk_nrf54l15_cpuapp_ns_mcuboot.overlay"
+
+/ {
+	chosen {
+		zephyr,code-partition = &boot_partition;
+	};
+};
+
+/*
+ * Both MCUboot slots live in internal RRAM, so the external SPI-NOR flash is not
+ * used by the bootloader. Disable it in the MCUboot image (it also avoids
+ * linking the flash deep-power-down timing path, which needs a system clock that
+ * MCUboot does not run).
+ */
+&mx25r64 {
+	status = "disabled";
+};

@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2026 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+#
+
+# Fast Pair provisioner application.
+#
+# It provisions the Fast Pair registration data into hardware-protected storage:
+#   - the Anti-Spoofing private key into a CRACEN KMU slot,
+#   - the Model ID into PSA Protected Storage.
+# The application then sources the data from there at runtime (see
+# fp_registration_data_provision.c).
+#
+# This file DEFINES the provisioner configuration options and their
+# descriptions. It does NOT set their values: the demo credentials and storage
+# locations are set once in the application's Kconfig.sysbuild (the single source
+# of truth) and injected here by sysbuild via set_config_* in sysbuild.cmake.
+# The defaults below are only inert placeholders for a standalone build.
+
+mainmenu "Fast Pair provisioner"
+
+rsource "Kconfig.fp_provision"
+
+source "Kconfig.zephyr"
