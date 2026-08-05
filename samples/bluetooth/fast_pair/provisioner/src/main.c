@@ -42,8 +42,8 @@ LOG_MODULE_REGISTER(fp_provision, LOG_LEVEL_INF);
 	PSA_KEY_ID_FROM_CRACEN_KMU_SLOT(CRACEN_KMU_KEY_USAGE_SCHEME_RAW, \
 					CONFIG_FP_PROVISION_KMU_SLOT)
 
-/* Protected Storage uid holding the Model ID. */
-#define FP_PS_MODEL_ID_UID	((psa_storage_uid_t)CONFIG_FP_PROVISION_PS_ID)
+/* Internal Trusted Storage uid holding the Model ID. */
+#define FP_ITS_MODEL_ID_UID	((psa_storage_uid_t)CONFIG_FP_PROVISION_ITS_ID)
 
 BUILD_ASSERT(FP_PROVISION_ANTI_SPOOFING_KEY_B64_MAX_LEN % FP_RRAM_WRITE_BLOCK == 0U,
 	"Key storage must be a whole number of RRAM write blocks");
@@ -183,7 +183,7 @@ static int provision_model_id(void)
 
 	sys_put_be24(CONFIG_FP_PROVISION_MODEL_ID, model_id);
 
-	status = psa_its_set(FP_PS_MODEL_ID_UID, sizeof(model_id), model_id,
+	status = psa_its_set(FP_ITS_MODEL_ID_UID, sizeof(model_id), model_id,
 			     PSA_STORAGE_FLAG_WRITE_ONCE);
 	if (status != PSA_SUCCESS) {
 		LOG_ERR("Model ID provisioning failed (err %d)", status);
@@ -191,7 +191,7 @@ static int provision_model_id(void)
 	}
 
 	LOG_INF("Model ID 0x%06x provisioned to Internal Trusted Storage (uid %u)",
-		CONFIG_FP_PROVISION_MODEL_ID, (unsigned int)FP_PS_MODEL_ID_UID);
+		CONFIG_FP_PROVISION_MODEL_ID, (unsigned int)FP_ITS_MODEL_ID_UID);
 
 	return 0;
 }

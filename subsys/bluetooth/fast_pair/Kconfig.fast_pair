@@ -158,10 +158,10 @@ config BT_FAST_PAIR_PROVISION
 	  instead of the bt_fast_pair flash partition:
 	    - the Anti-Spoofing private key from a CRACEN KMU slot
 	      (see BT_FAST_PAIR_KMU_SLOT),
-	    - the Model ID from PSA Protected Storage
-	      (see BT_FAST_PAIR_PS_ID).
+	    - the Model ID from PSA Internal Trusted Storage
+	      (see BT_FAST_PAIR_ITS_ID).
 	  On the first boot the data is migrated ("provisioned") from the flash
-	  partition into KMU/Protected Storage and the partition is erased so the
+	  partition into KMU/Internal Trusted Storage and the partition is erased so the
 	  Anti-Spoofing private key no longer resides in plaintext.
 	  This feature is only supported on the non-secure (TF-M) build with the
 	  PSA crypto backend.
@@ -176,11 +176,11 @@ config BT_FAST_PAIR_KMU_SLOT
 	  private key. A 256-bit key occupies two consecutive KMU slots, so keep
 	  the following slot (this value + 1) free.
 
-config BT_FAST_PAIR_PS_ID
-	int "PSA Protected Storage UID for the Model ID"
+config BT_FAST_PAIR_ITS_ID
+	int "PSA Internal Trusted Storage UID for the Model ID"
 	default 2000
 	help
-	  PSA Protected Storage uid used to store the Fast Pair Model ID.
+	  PSA Internal Trusted Storage uid used to store the Fast Pair Model ID.
 
 endif # BT_FAST_PAIR_PROVISION
 

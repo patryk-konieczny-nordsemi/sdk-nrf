@@ -35,6 +35,8 @@ if(SB_CONFIG_BOOTLOADER_MCUBOOT AND "${BOARD}" MATCHES "nrf54l15")
   # (primary) image automatically - there is no manual signing step.
   add_overlay_dts(${DEFAULT_IMAGE}
     ${_input_device_app_dir}/boards/nrf54l15dk_nrf54l15_cpuapp_ns_mcuboot.overlay)
+  add_overlay_config(${DEFAULT_IMAGE}
+    ${_input_device_app_dir}/boards/nrf54l15dk_nrf54l15_cpuapp_ns_mcuboot.conf)
   set_config_bool(${DEFAULT_IMAGE} CONFIG_BOOTLOADER_MCUBOOT y)
   set_config_bool(${DEFAULT_IMAGE} CONFIG_USE_DT_CODE_PARTITION y)
 
@@ -47,13 +49,13 @@ if(SB_CONFIG_BOOTLOADER_MCUBOOT AND "${BOARD}" MATCHES "nrf54l15")
       "${SB_CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY}")
     set_config_int(${DEFAULT_IMAGE} CONFIG_FP_PROVISION_KMU_SLOT
       ${SB_CONFIG_BT_FAST_PAIR_KMU_SLOT})
-    set_config_int(${DEFAULT_IMAGE} CONFIG_FP_PROVISION_PS_ID
-      ${SB_CONFIG_BT_FAST_PAIR_PS_ID})
+    set_config_int(${DEFAULT_IMAGE} CONFIG_FP_PROVISION_ITS_ID
+      ${SB_CONFIG_BT_FAST_PAIR_ITS_ID})
   else()
     set_config_int(${DEFAULT_IMAGE} CONFIG_BT_FAST_PAIR_KMU_SLOT
       ${SB_CONFIG_BT_FAST_PAIR_KMU_SLOT})
-    set_config_int(${DEFAULT_IMAGE} CONFIG_BT_FAST_PAIR_PS_ID
-      ${SB_CONFIG_BT_FAST_PAIR_PS_ID})
+    set_config_int(${DEFAULT_IMAGE} CONFIG_BT_FAST_PAIR_ITS_ID
+      ${SB_CONFIG_BT_FAST_PAIR_ITS_ID})
   endif()
 endif()
 
@@ -80,11 +82,11 @@ if(SB_CONFIG_PROVISIONER_IMAGE AND NOT SB_CONFIG_BOOTLOADER_MCUBOOT
     "${SB_CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY}")
   set_config_int(provisioner CONFIG_FP_PROVISION_KMU_SLOT
     ${SB_CONFIG_BT_FAST_PAIR_KMU_SLOT})
-  set_config_int(provisioner CONFIG_FP_PROVISION_PS_ID
-    ${SB_CONFIG_BT_FAST_PAIR_PS_ID})
+  set_config_int(provisioner CONFIG_FP_PROVISION_ITS_ID
+    ${SB_CONFIG_BT_FAST_PAIR_ITS_ID})
 
   set_config_int(${DEFAULT_IMAGE} CONFIG_BT_FAST_PAIR_KMU_SLOT
     ${SB_CONFIG_BT_FAST_PAIR_KMU_SLOT})
-  set_config_int(${DEFAULT_IMAGE} CONFIG_BT_FAST_PAIR_PS_ID
-    ${SB_CONFIG_BT_FAST_PAIR_PS_ID})
+  set_config_int(${DEFAULT_IMAGE} CONFIG_BT_FAST_PAIR_ITS_ID
+    ${SB_CONFIG_BT_FAST_PAIR_ITS_ID})
 endif()

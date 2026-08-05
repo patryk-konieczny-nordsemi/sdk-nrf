@@ -10,7 +10,7 @@ config FP_PROVISION_MODEL_ID
 	hex "Fast Pair Model ID"
 	default 0x0
 	help
-	  Fast Pair Model ID written to PSA Protected Storage. Obtained during
+	  Fast Pair Model ID written to PSA Internal Trusted Storage. Obtained during
 	  device model registration in the Google Nearby Console. A 24-bit value
 	  (0x000000 - 0xFFFFFF).
 
@@ -31,11 +31,11 @@ config FP_PROVISION_KMU_SLOT
 	  the following slot (this value + 1) free. Must match
 	  CONFIG_BT_FAST_PAIR_KMU_SLOT of the application image.
 
-config FP_PROVISION_PS_ID
-	int "PSA Protected Storage UID for the Model ID"
+config FP_PROVISION_ITS_ID
+	int "PSA Internal Trusted Storage UID for the Model ID"
 	default 0
 	help
-	  PSA Protected Storage uid used to store the Fast Pair Model ID. Must
-	  match CONFIG_BT_FAST_PAIR_PS_ID of the application image.
+	  PSA Internal Trusted Storage uid used to store the Fast Pair Model ID. Must
+	  match CONFIG_BT_FAST_PAIR_ITS_ID of the application image.
 
 endmenu

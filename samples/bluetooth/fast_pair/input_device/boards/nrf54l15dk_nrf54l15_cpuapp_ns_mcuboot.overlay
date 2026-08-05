@@ -11,17 +11,6 @@
  * headroom for DFU growth and debug builds, aligned to the 4 KB TrustZone
  * flash region granularity:
  *
- *   boot_partition ............ 64 KB   MCUboot (secure, immutable)
- *   tfm_storage_partition ..... 40 KB   secure (ITS 16 / OTP 8 / PS 16)
- *   slot0_partition .......... 512 KB   MCUboot primary image (image-0), of which
- *       slot0_s_partition .... 128 KB       secure image (tfm_s + NSC veneers)
- *       --- Secure / Non-Secure boundary @ 0x20000 (128 KB) ---
- *       slot0_ns_partition ... 384 KB       non-secure application
- *   slot1_partition .......... 512 KB   MCUboot secondary image (image-1)
- *   storage_partition ......... 20 KB   non-secure settings storage
- *
- * Both MCUboot slots live in internal RRAM and are the same size, as required
- * for Direct-XIP (execute-in-place from either slot).
  */
 
 / {
