@@ -8,10 +8,14 @@ cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(input_device)
 
-# Single project, shared configuration. FILE_SUFFIX only selects the source:
-#   -DFILE_SUFFIX=provisioner -> build the Fast Pair provisioner (../provisioner)
-#   unset (or any other value) -> build the input_device application
-if("${FILE_SUFFIX}" STREQUAL "provisioner")
+# APP_SOURCE selects which application is built in the single-project MCUboot flow:
+#   -DAPP_SOURCE=provisioner -> Fast Pair provisioner (../provisioner/src/main.c)
+#   unset (default)          -> input_device application
+#
+# FILE_SUFFIX is reserved for sysbuild configuration variants (e.g. mcuboot).
+zephyr_get(APP_SOURCE SYSBUILD GLOBAL)
+
+if("${APP_SOURCE}" STREQUAL "provisioner")
   target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../provisioner/src/main.c)
 else()
   # NORDIC SDK APP START

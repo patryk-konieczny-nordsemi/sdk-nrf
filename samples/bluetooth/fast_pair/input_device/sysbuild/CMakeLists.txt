@@ -16,22 +16,23 @@ set(INPUT_DEVICE_APP_DIR "${input_device_app_dir}" CACHE PATH
 # configuration lookup, not the per-image prj.conf.
 set(SB_APPLICATION_CONFIG_DIR "${input_device_app_dir}")
 
-# Enable MCUboot only for the dedicated `build_ns_mcuboot` directory, so the
-# standard `build` and `build_ns` configurations remain completely untouched.
-# This is a single project: both applications (input_device and the Fast Pair
-# provisioner) share this MCUboot sysbuild configuration, board overlay and
-# signing key. The application source is selected with FILE_SUFFIX in the
-# application CMakeLists.txt (unset -> input_device, provisioner -> provisioner).
-if(DEFINED APPLICATION_BINARY_DIR)
-  get_filename_component(_build_dir_name "${APPLICATION_BINARY_DIR}" NAME)
-else()
-  get_filename_component(_build_dir_name "${CMAKE_BINARY_DIR}" NAME)
+# Promote command-line variables to typed cache entries so sysbuild forwards
+# them to image builds (UNINITIALIZED -D values are not propagated otherwise).
+if(DEFINED APP_SOURCE)
+  set(APP_SOURCE "${APP_SOURCE}" CACHE STRING
+      "Application source variant (provisioner or default)" FORCE)
+endif()
+if(DEFINED FILE_SUFFIX)
+  set(FILE_SUFFIX "${FILE_SUFFIX}" CACHE STRING
+      "Sysbuild/application file suffix (e.g. mcuboot)" FORCE)
 endif()
 
-if(_build_dir_name STREQUAL "build_ns_mcuboot")
-  set(SB_CONF_FILE "${input_device_app_dir}/sysbuild_mcuboot.conf" CACHE STRING
-      "Sysbuild configuration for the MCUboot-enabled /ns build" FORCE)
-endif()
+# MCUboot sysbuild settings live in sysbuild_mcuboot.conf and are selected with
+# FILE_SUFFIX=mcuboot (standard Zephyr sysbuild file-suffix mechanism). Both
+# applications (input_device and the Fast Pair provisioner) share that MCUboot
+# configuration, board overlay and signing key. The application source is
+# selected with APP_SOURCE in the application CMakeLists.txt (unset ->
+# input_device, provisioner -> provisioner).
 
 find_package(Sysbuild REQUIRED HINTS $ENV{ZEPHYR_BASE})
 

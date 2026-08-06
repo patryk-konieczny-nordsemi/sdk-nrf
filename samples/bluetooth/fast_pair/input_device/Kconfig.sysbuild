@@ -64,5 +64,5 @@ config PROVISIONER_IMAGE
 	  It is built as BUILD_ONLY, so it is not flashed by the default
 	  `west flash`. Flash it explicitly with `west flash --domain provisioner`
 	  before flashing the input_device application. Only relevant for plain
-	  /ns (TF-M) builds without MCUboot. MCUboot builds use FILE_SUFFIX to
+	  /ns (TF-M) builds without MCUboot. MCUboot builds use APP_SOURCE to
 	  select the provisioner as the main application image instead.

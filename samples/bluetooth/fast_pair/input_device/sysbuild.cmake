@@ -5,7 +5,7 @@
 #
 # Shared Fast Pair sysbuild logic for the input_device sample (a single project).
 # The MCUboot configuration, flash layout, signing key and Fast Pair credentials
-# are identical no matter which application source FILE_SUFFIX selects.
+# are identical no matter which application source APP_SOURCE selects.
 #
 
 include(${ZEPHYR_NRF_MODULE_DIR}/sysbuild/extensions.cmake)
@@ -16,9 +16,9 @@ if(NOT _input_device_app_dir)
 endif()
 
 # ----------------------------------------------------------------------------
-# MCUboot-enabled /ns build (the `build_ns_mcuboot` directory).
+# MCUboot-enabled /ns build (FILE_SUFFIX=mcuboot -> sysbuild_mcuboot.conf).
 #
-# The single application image (input_device or, with FILE_SUFFIX=provisioner,
+# The single application image (input_device or, with APP_SOURCE=provisioner,
 # the provisioner) shares the same MCUboot overwrite-only flash layout.
 # ----------------------------------------------------------------------------
 if(SB_CONFIG_BOOTLOADER_MCUBOOT AND "${BOARD}" MATCHES "nrf54l15")
@@ -30,19 +30,31 @@ if(SB_CONFIG_BOOTLOADER_MCUBOOT AND "${BOARD}" MATCHES "nrf54l15")
   add_overlay_config(mcuboot
     ${_input_device_app_dir}/sysbuild/mcuboot/prj.conf)
 
+  # FILE_SUFFIX=mcuboot auto-applies boards/*_ns_mcuboot.{overlay,conf} for the
+  # main image. When APP_SOURCE=provisioner the preset CONF_FILE skips board-conf
+  # auto-discovery, so apply that fragment manually. Without FILE_SUFFIX=mcuboot
+  # (e.g. -DSB_CONF_FILE=sysbuild_mcuboot.conf only), apply both manually.
+  if(NOT FILE_SUFFIX STREQUAL "mcuboot")
+    add_overlay_dts(${DEFAULT_IMAGE}
+      ${_input_device_app_dir}/boards/nrf54l15dk_nrf54l15_cpuapp_ns_mcuboot.overlay)
+    add_overlay_config(${DEFAULT_IMAGE}
+      ${_input_device_app_dir}/boards/nrf54l15dk_nrf54l15_cpuapp_ns_mcuboot.conf)
+  elseif("${APP_SOURCE}" STREQUAL "provisioner")
+    add_overlay_config(${DEFAULT_IMAGE}
+      ${_input_device_app_dir}/boards/nrf54l15dk_nrf54l15_cpuapp_ns_mcuboot.conf)
+  endif()
+
   # Give the application image the MCUboot flash layout and build it as an
   # MCUboot image booting from the devicetree code partition. NCS signs this
   # (primary) image automatically - there is no manual signing step.
-  add_overlay_dts(${DEFAULT_IMAGE}
-    ${_input_device_app_dir}/boards/nrf54l15dk_nrf54l15_cpuapp_ns_mcuboot.overlay)
-  add_overlay_config(${DEFAULT_IMAGE}
-    ${_input_device_app_dir}/boards/nrf54l15dk_nrf54l15_cpuapp_ns_mcuboot.conf)
   set_config_bool(${DEFAULT_IMAGE} CONFIG_BOOTLOADER_MCUBOOT y)
   set_config_bool(${DEFAULT_IMAGE} CONFIG_USE_DT_CODE_PARTITION y)
 
   # Feed the Fast Pair credentials/storage locations (single source of truth in
   # Kconfig.sysbuild) to the selected application source.
-  if("${FILE_SUFFIX}" STREQUAL "provisioner")
+  if("${APP_SOURCE}" STREQUAL "provisioner")
+    set(${DEFAULT_IMAGE}_CONF_FILE "${_input_device_app_dir}/prj_provisioner.conf"
+        CACHE STRING "" FORCE)
     set_config_int(${DEFAULT_IMAGE} CONFIG_FP_PROVISION_MODEL_ID
       ${SB_CONFIG_BT_FAST_PAIR_MODEL_ID})
     set_config_string(${DEFAULT_IMAGE} CONFIG_FP_PROVISION_ANTI_SPOOFING_KEY
