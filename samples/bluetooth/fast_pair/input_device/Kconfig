@@ -5,12 +5,13 @@
 #
 
 source "Kconfig.zephyr"
+source "$(ZEPHYR_NRF_MODULE_DIR)/subsys/provisioner/Kconfig.fp_provision"
 
 config SETTINGS
-	default y
+	default y if BT_FAST_PAIR
 
 config ZMS
-	default y if (SOC_FLASH_NRF_RRAM || SOC_FLASH_NRF_MRAM)
+	default y if BT_FAST_PAIR && (SOC_FLASH_NRF_RRAM || SOC_FLASH_NRF_MRAM)
 
 config NVS
-	default y if !(SOC_FLASH_NRF_RRAM || SOC_FLASH_NRF_MRAM)
+	default y if BT_FAST_PAIR && !(SOC_FLASH_NRF_RRAM || SOC_FLASH_NRF_MRAM)

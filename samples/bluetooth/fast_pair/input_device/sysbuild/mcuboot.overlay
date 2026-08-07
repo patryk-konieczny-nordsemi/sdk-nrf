@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+ */
+
+/*
+ * MCUboot child-image overlay (auto-discovered as sysbuild/mcuboot.overlay).
+ * Reuses the application flash partition map, then boots from the MCUboot
+ * partition. See boards/nrf54l15dk_nrf54l15_cpuapp_ns_mcuboot.overlay.
+ */
+#include "../boards/nrf54l15dk_nrf54l15_cpuapp_ns_mcuboot.overlay"
+
+/ {
+	chosen {
+		zephyr,code-partition = &boot_partition;
+	};
+};
+
+/*
+ * Both MCUboot slots live in internal RRAM, so the external SPI-NOR flash is not
+ * used by the bootloader. Disable it in the MCUboot image (it also avoids
+ * linking the flash deep-power-down timing path, which needs a system clock that
+ * MCUboot does not run).
+ */
+&mx25r64 {
+	status = "disabled";
+};

@@ -1,0 +1,2 @@
+// Register provision data to the provisioning subsystem:
+// Phase 1: register anything and use LOG_INF to check is system is fine (this file needs to be called somewhare - but it cannot be called as subsys element - avoid bloating the provisioner)
