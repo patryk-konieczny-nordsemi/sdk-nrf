@@ -135,8 +135,8 @@
 	 }
  
 	 if (!prov_data_present() || !prov_data_valid()) {
-		 LOG_ERR("Fast Pair data not provisioned - flash the provisioner image "
-			 "(west flash --domain provisioner) before running this application");
+		 LOG_ERR("Fast Pair data not provisioned - build and flash the provisioner "
+			 "image (FILE_SUFFIX=provisioner) before running this application");
 		 return -EINVAL;
 	 }
  
