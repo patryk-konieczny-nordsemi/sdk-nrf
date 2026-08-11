@@ -1,1 +1,3 @@
-ITERABLE_SECTION_ROM(generic_provision_callback, 4)
+ITERABLE_SECTION_ROM(provision_generic_callback, 4)
+ITERABLE_SECTION_ROM(provision_its_entry, 4)
+ITERABLE_SECTION_ROM(provision_kmu_entry, 4)

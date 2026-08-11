@@ -5,7 +5,7 @@
  */
 
 #include <errno.h>
-#include <stdint.h>
+#include <limits.h>
 #include <string.h>
 
 #include <zephyr/devicetree.h>
@@ -13,200 +13,267 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/base64.h>
-#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 
 #include <psa/crypto.h>
-#include <psa/crypto_extra.h>
 #include <psa/internal_trusted_storage.h>
-#include <psa/storage_common.h>
-#include <cracen_psa_kmu.h>
-#include <cracen_psa_key_ids.h>
 
 #include "provision_entry.h"
 
-LOG_MODULE_REGISTER(fp_provision, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(provisioner, LOG_LEVEL_INF);
 
-/* RRAM write granularity on this SoC: 128-bit (16-byte) wordline. */
-#define FP_RRAM_WRITE_BLOCK 16U
+static int provision_init(void)
+{
+	psa_status_t status = psa_crypto_init();
 
-/* Fast Pair Model ID length (24 bits = 3 bytes). */
-#define FP_MODEL_ID_LEN		3U
+	if (status != PSA_SUCCESS) {
+		LOG_ERR("psa_crypto_init failed (err %d)", status);
+		return -EIO;
+	}
 
-/* Fast Pair Anti-Spoofing private key length (256 bits = 32 bytes). */
-#define FP_PROVISION_ANTI_SPOOFING_KEY_LEN 32U
+	return 0;
+}
 
-/* Longest expected base64 encoding of the 32-byte Anti-Spoofing key (+ NUL). */
-#define FP_PROVISION_ANTI_SPOOFING_KEY_B64_MAX_LEN 64U
+static int provision_validate_rram_erase(const char *name, const void *data,
+					 size_t payload_length, size_t storage_length)
+{
+	const struct device *flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
+	size_t wbs;
+	off_t off;
 
-/* Handle of the Anti-Spoofing private key in the KMU (RAW usage scheme). */
-#define FP_KMU_KEY_ID \
-    PSA_KEY_ID_FROM_CRACEN_KMU_SLOT(CRACEN_KMU_KEY_USAGE_SCHEME_RAW, \
-                    CONFIG_FP_PROVISION_KMU_SLOT)
+	if (storage_length == 0U) {
+		return 0;
+	}
 
-/* Internal Trusted Storage uid holding the Model ID. */
-#define FP_ITS_MODEL_ID_UID	((psa_storage_uid_t)CONFIG_FP_PROVISION_ITS_ID)
+	if ((data == NULL) || (payload_length == 0U)) {
+		LOG_ERR("Entry %s: RRAM erase requested without source data", name);
+		return -EINVAL;
+	}
 
-BUILD_ASSERT(FP_PROVISION_ANTI_SPOOFING_KEY_B64_MAX_LEN % FP_RRAM_WRITE_BLOCK == 0U,
-    "Key storage must be a whole number of RRAM write blocks");
+	if (payload_length > storage_length) {
+		LOG_ERR("Entry %s: payload_length %zu exceeds storage_length %zu", name,
+			payload_length, storage_length);
+		return -EINVAL;
+	}
 
-static const char fp_anti_spoofing_key_b64[FP_PROVISION_ANTI_SPOOFING_KEY_B64_MAX_LEN] __aligned(16) =
-        CONFIG_FP_PROVISION_ANTI_SPOOFING_KEY;
+	if (storage_length > PROVISION_RRAM_ERASE_MAX_LEN) {
+		LOG_ERR("Entry %s: storage_length %zu exceeds limit %u", name, storage_length,
+			PROVISION_RRAM_ERASE_MAX_LEN);
+		return -EINVAL;
+	}
 
+	if (!device_is_ready(flash_dev)) {
+		LOG_ERR("Flash device not ready");
+		return -ENODEV;
+	}
+
+	wbs = flash_get_write_block_size(flash_dev);
+	off = (off_t)(uintptr_t)data;
+
+	if ((((size_t)off % wbs) != 0U) || ((storage_length % wbs) != 0U)) {
+		LOG_ERR("Entry %s: RRAM storage region not write-block aligned "
+			"(off %ld, len %zu, wbs %zu)",
+			name, (long)off, storage_length, wbs);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int provision_validate_source(const char *name, const void *data,
+				     size_t payload_length, enum provision_data_format format,
+				     size_t storage_length)
+{
+	if ((data == NULL) || (payload_length == 0U)) {
+		LOG_ERR("Entry %s: missing source data", name);
+		return -EINVAL;
+	}
+
+
+	return provision_validate_rram_erase(name, data, payload_length, storage_length);
+}
 
 static int purge_sram_secret(void *buf, size_t len)
 {
-    if ((buf == NULL) || (len == 0U)) {
-        LOG_ERR("Invalid SRAM purge request");
-        return -EINVAL;
-    }
+	if ((buf == NULL) || (len == 0U)) {
+		return -EINVAL;
+	}
 
-    memset(buf, 0, len);
+	memset(buf, 0, len);
 
-    return 0;
+	return 0;
 }
 
 static int purge_rram_secret(const void *addr, size_t len)
 {
-    const struct device *flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
-    uint8_t zeros[FP_PROVISION_ANTI_SPOOFING_KEY_B64_MAX_LEN] = {0};
-    size_t wbs;
-    off_t off;
-    int err;
+	const struct device *flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
+	uint8_t zeros[PROVISION_RRAM_ERASE_MAX_LEN];
+	off_t off;
+	int err;
 
-    if ((addr == NULL) || (len == 0U) || (len > sizeof(zeros))) {
-        LOG_ERR("Invalid RRAM purge request");
-        return -EINVAL;
-    }
+	if ((addr == NULL) || (len == 0U)) {
+		return -EINVAL;
+	}
 
-    if (!device_is_ready(flash_dev)) {
-        LOG_ERR("Flash device not ready");
-        return -ENODEV;
-    }
+	/* Caller must have validated via provision_validate_rram_erase(). */
+	off = (off_t)(uintptr_t)addr;
+	memset(zeros, 0, sizeof(zeros));
+	err = flash_write(flash_dev, off, zeros, len);
+	if (err != 0) {
+		LOG_ERR("Failed to purge secret from RRAM (err %d)", err);
+		return -EIO;
+	}
 
-    wbs = flash_get_write_block_size(flash_dev);
-    off = (off_t)(uintptr_t)addr;
-
-
-    if ((((size_t)off % wbs) != 0U) || ((len % wbs) != 0U)) {
-        LOG_ERR("RRAM purge region not write-block aligned "
-            "(off %ld, len %zu, wbs %zu)", (long)off, len, wbs);
-        return -EINVAL;
-    }
-
-    err = flash_write(flash_dev, off, zeros, len);
-    if (err != 0) {
-        LOG_ERR("Failed to purge secret from RRAM (err %d)", err);
-        return -EIO;
-    }
-
-    return 0;
+	return 0;
 }
 
-static int provision_init(void)
+static int provision_get_payload(const void *data_in, size_t payload_length,
+				 enum provision_data_format format, uint8_t *buf,
+				 size_t buf_len, size_t *out_len)
 {
-    psa_status_t status = psa_crypto_init();
+	switch (format) {
+	case PROVISION_DATA_FORMAT_RAW:
+		if (payload_length > buf_len) {
+			return -EINVAL;
+		}
 
-    if (status != PSA_SUCCESS) {
-        LOG_ERR("psa_crypto_init failed (err %d)", status);
-        return -EIO;
-    }
+		memcpy(buf, data_in, payload_length);
+		*out_len = payload_length;
+		return 0;
 
-    return 0;
-}
-
-static int provision_anti_spoofing_key(void)
-{
-    const size_t key_b64_len = strlen(fp_anti_spoofing_key_b64);
-    uint8_t fp_provision_anti_spoofing_key[FP_PROVISION_ANTI_SPOOFING_KEY_LEN] = {0};
-    size_t bytes_written = 0;
-    psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
-    psa_key_id_t key_id = PSA_KEY_ID_NULL;
-    psa_status_t status;
-    int err;
-
-    if (key_b64_len == 0U) {
-        LOG_ERR("Anti-Spoofing key is empty");
-        return -EINVAL;
-    }
-
-    err = base64_decode(fp_provision_anti_spoofing_key,
-                sizeof(fp_provision_anti_spoofing_key), &bytes_written,
-                (const uint8_t *)fp_anti_spoofing_key_b64, key_b64_len);
-    if (err != 0) {
-        LOG_ERR("Anti-Spoofing key base64 decode failed (err %d)", err);
-        return -EINVAL;
-    }
-
-    if (bytes_written != FP_PROVISION_ANTI_SPOOFING_KEY_LEN) {
-        LOG_ERR("Anti-Spoofing key has invalid length (%zu)", bytes_written);
-        return -EINVAL;
-    }
-
-    psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_DERIVE);
-    psa_set_key_algorithm(&attr, PSA_ALG_ECDH);
-    psa_set_key_type(&attr, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
-    psa_set_key_bits(&attr, FP_PROVISION_ANTI_SPOOFING_KEY_LEN * __CHAR_BIT__);
-    psa_set_key_lifetime(&attr,
-                PSA_KEY_LIFETIME_FROM_PERSISTENCE_AND_LOCATION(
-                    CRACEN_KEY_PERSISTENCE_READ_ONLY,
-                    PSA_KEY_LOCATION_CRACEN_KMU));
-    psa_set_key_id(&attr, FP_KMU_KEY_ID);
-
-    status = psa_import_key(&attr, fp_provision_anti_spoofing_key,
-                FP_PROVISION_ANTI_SPOOFING_KEY_LEN, &key_id);
-    psa_reset_key_attributes(&attr);
-    if (status != PSA_SUCCESS) {
-        LOG_ERR("Anti-Spoofing key provisioning failed (err %d)", status);
-        return -EIO;
-    }
-
-    LOG_INF("Anti-Spoofing key provisioned to KMU slot %d", CONFIG_FP_PROVISION_KMU_SLOT);
-
-    err = purge_rram_secret(fp_anti_spoofing_key_b64, FP_PROVISION_ANTI_SPOOFING_KEY_B64_MAX_LEN);
-    if (err != 0) {
-        return err;
-    }
-
-    err = purge_sram_secret(fp_provision_anti_spoofing_key,
-                sizeof(fp_provision_anti_spoofing_key));
-    if (err != 0) {
-        LOG_ERR("Failed to purge Anti-Spoofing key from SRAM (err %d)", err);
-        return err;
-    }
-
-    return 0;
-}
-
-static int provision_model_id(void)
-{
-    uint8_t model_id[FP_MODEL_ID_LEN];
-    psa_status_t status;
-
-    sys_put_be24(CONFIG_FP_PROVISION_MODEL_ID, model_id);
-
-    status = psa_its_set(FP_ITS_MODEL_ID_UID, sizeof(model_id), model_id,
-                PSA_STORAGE_FLAG_WRITE_ONCE);
-    if (status != PSA_SUCCESS) {
-        LOG_ERR("Model ID provisioning failed (err %d)", status);
-        return -EIO;
-    }
-
-    LOG_INF("Model ID 0x%06x provisioned to Internal Trusted Storage (uid %u)",
-        CONFIG_FP_PROVISION_MODEL_ID, (unsigned int)FP_ITS_MODEL_ID_UID);
-
-    return 0;
-}
- 
-static int run_provision_plugins(void)
-{
-	STRUCT_SECTION_FOREACH(generic_provision_callback, e) {
+	case PROVISION_DATA_FORMAT_BASE64: {
+		size_t enc_len = strnlen(data_in, payload_length);
 		int err;
 
-		LOG_INF("Running provision plugin: %s", e->name);
-		err = e->callback_ptr();
+		if (enc_len == 0U) {
+			return -EINVAL;
+		}
+
+		err = base64_decode(buf, buf_len, out_len, data_in, enc_len);
 		if (err != 0) {
-			LOG_ERR("Provision plugin %s failed (err %d)", e->name, err);
+			return -EINVAL;
+		}
+
+		return 0;
+	}
+
+	default:
+		return -EINVAL;
+	}
+}
+
+static int run_provision_its_entries(void)
+{
+	STRUCT_SECTION_FOREACH(provision_its_entry, entry) {
+		uint8_t payload[PROVISION_RRAM_ERASE_MAX_LEN];
+		size_t payload_len = 0;
+		psa_status_t status;
+		int err;
+
+		err = provision_validate_source(entry->name, entry->data, entry->payload_length,
+						entry->format, entry->storage_length);
+		if (err != 0) {
+			return err;
+		}
+
+		err = provision_get_payload(entry->data, entry->payload_length, entry->format,
+					    payload, sizeof(payload), &payload_len);
+		if (err != 0) {
+			LOG_ERR("Entry %s: invalid payload (err %d)", entry->name, err);
+			return err;
+		}
+
+		status = psa_its_set(entry->uid, payload_len, payload, entry->create_flags);
+		if (status != PSA_SUCCESS) {
+			LOG_ERR("Entry %s: ITS write failed (err %d)", entry->name, status);
+			return -EIO;
+		}
+
+		LOG_INF("Entry %s: provisioned to ITS uid %u", entry->name, (unsigned int)entry->uid);
+
+		if (entry->storage_length != 0U) {
+			err = purge_rram_secret(entry->data, entry->storage_length);
+			if (err != 0) {
+				return err;
+			}
+		}
+	}
+
+	return 0;
+}
+
+static int run_provision_kmu_entries(void)
+{
+	STRUCT_SECTION_FOREACH(provision_kmu_entry, entry) {
+		uint8_t payload[PROVISION_RRAM_ERASE_MAX_LEN];
+		size_t payload_len = 0;
+		psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
+		psa_key_id_t key_id = PSA_KEY_ID_NULL;
+		psa_status_t status;
+		int err;
+
+		err = provision_validate_source(entry->name, entry->data, entry->payload_length,
+						entry->format, entry->storage_length);
+		if (err != 0) {
+			return err;
+		}
+
+		err = provision_get_payload(entry->data, entry->payload_length, entry->format,
+					    payload, sizeof(payload), &payload_len);
+		if (err != 0) {
+			LOG_ERR("Entry %s: invalid payload (err %d)", entry->name, err);
+			return err;
+		}
+
+		if (payload_len != (entry->key_bits / CHAR_BIT)) {
+			LOG_ERR("Entry %s: decoded length %zu does not match key size %zu bits",
+				entry->name, payload_len, entry->key_bits);
+			return -EINVAL;
+		}
+
+		psa_set_key_id(&attr, entry->id);
+		psa_set_key_type(&attr, entry->type);
+		psa_set_key_bits(&attr, entry->key_bits);
+		psa_set_key_lifetime(&attr, entry->lifetime);
+		psa_set_key_usage_flags(&attr, entry->usage_flags);
+		psa_set_key_algorithm(&attr, entry->alg);
+
+		status = psa_import_key(&attr, payload, payload_len, &key_id);
+		psa_reset_key_attributes(&attr);
+		if (status != PSA_SUCCESS) {
+			LOG_ERR("Entry %s: KMU import failed (err %d)", entry->name, status);
+			return -EIO;
+		}
+
+		LOG_INF("Entry %s: provisioned to KMU", entry->name);
+
+		err = purge_sram_secret(payload, payload_len);
+		if (err != 0) {
+			LOG_ERR("Entry %s: failed to purge decoded key from SRAM (err %d)",
+				entry->name, err);
+			return err;
+		}
+
+		if (entry->storage_length != 0U) {
+			err = purge_rram_secret(entry->data, entry->storage_length);
+			if (err != 0) {
+				return err;
+			}
+		}
+	}
+
+	return 0;
+}
+
+static int run_provision_callbacks(void)
+{
+	STRUCT_SECTION_FOREACH(provision_generic_callback, entry) {
+		int err;
+
+		LOG_INF("Running provision callback: %s", entry->name);
+		err = entry->callback();
+		if (err != 0) {
+			LOG_ERR("Provision callback %s failed (err %d)", entry->name, err);
 			return err;
 		}
 	}
@@ -216,25 +283,31 @@ static int run_provision_plugins(void)
 
 int provision_data(void)
 {
-	LOG_INF("Fast Pair provisioner started");
+	int err;
 
-	if (provision_init()) {
-		return -1;
+	LOG_INF("Provisioner started");
+
+	err = provision_init();
+	if (err != 0) {
+		return err;
 	}
 
-	if (provision_anti_spoofing_key()) {
-		return -1;
+	err = run_provision_kmu_entries();
+	if (err != 0) {
+		return err;
 	}
 
-	if (provision_model_id()) {
-		return -1;
+	err = run_provision_its_entries();
+	if (err != 0) {
+		return err;
 	}
 
-	LOG_INF("Fast Pair provisioning completed successfully");
-
-	if (run_provision_plugins()) {
-		return -1;
+	err = run_provision_callbacks();
+	if (err != 0) {
+		return err;
 	}
+
+	LOG_INF("Provisioning completed successfully");
 
 	return 0;
 }

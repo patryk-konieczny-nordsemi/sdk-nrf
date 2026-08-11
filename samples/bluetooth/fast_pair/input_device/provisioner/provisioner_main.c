@@ -15,7 +15,7 @@ int main(void)
 {
 	int err;
 
-	LOG_INF("Provisioner sub-application starting");
+	LOG_INF("Provisioner application starting");
 	err = provision_data();
 	if (err != 0) {
 		LOG_ERR("Provisioning failed (err %d)", err);
