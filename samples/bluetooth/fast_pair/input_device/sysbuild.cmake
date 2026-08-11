@@ -38,9 +38,8 @@ if(_is_mcuboot_family AND NOT SB_CONFIG_BOOTLOADER_MCUBOOT)
 endif()
 
 # ----------------------------------------------------------------------------
-# /ns main application (not provisioner, not legacy secure)
-# KMU/ITS and secure-storage provisioning source: single source in
-# Kconfig.sysbuild (SB_CONFIG_BT_FAST_PAIR_*).
+# /ns main application (not provisioner)
+# KMU/ITS slot values: Kconfig.sysbuild (SB_CONFIG_BT_FAST_PAIR_*).
 # ----------------------------------------------------------------------------
 if(NOT _is_provisioner AND SB_CONFIG_BOARD_IS_NON_SECURE AND "${BOARD}" MATCHES "nrf54l15")
   if(_is_mcuboot_family)
@@ -60,12 +59,14 @@ endif()
 if(_is_provisioner)
   add_overlay_config(${DEFAULT_IMAGE} ${_prov_prj})
 
-  set_config_int(${DEFAULT_IMAGE} CONFIG_FP_PROVISION_MODEL_ID
+  set_config_bool(${DEFAULT_IMAGE} CONFIG_PROVISIONER y)
+
+  set_config_int(${DEFAULT_IMAGE} CONFIG_BT_FAST_PAIR_MODEL_ID
     ${SB_CONFIG_BT_FAST_PAIR_MODEL_ID})
-  set_config_string(${DEFAULT_IMAGE} CONFIG_FP_PROVISION_ANTI_SPOOFING_KEY
+  set_config_string(${DEFAULT_IMAGE} CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY
     "${SB_CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY}")
-  set_config_int(${DEFAULT_IMAGE} CONFIG_FP_PROVISION_KMU_SLOT
+  set_config_int(${DEFAULT_IMAGE} CONFIG_BT_FAST_PAIR_KMU_SLOT
     ${SB_CONFIG_BT_FAST_PAIR_KMU_SLOT})
-  set_config_int(${DEFAULT_IMAGE} CONFIG_FP_PROVISION_ITS_ID
+  set_config_int(${DEFAULT_IMAGE} CONFIG_BT_FAST_PAIR_ITS_ID
     ${SB_CONFIG_BT_FAST_PAIR_ITS_ID})
 endif()

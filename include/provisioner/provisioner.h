@@ -11,8 +11,8 @@
  * @file provisioner.h
  * @brief Public API for the runtime data provisioner.
  *
- * User applications include this header and call provision_data() from their
- * provisioner sub-application main (see provisioner/provisioner_main.c).
+ * Provisioner application images include this header and call provision_data()
+ * from main (see samples/bluetooth/fast_pair/input_device/provisioner/).
  */
 
 #ifdef __cplusplus

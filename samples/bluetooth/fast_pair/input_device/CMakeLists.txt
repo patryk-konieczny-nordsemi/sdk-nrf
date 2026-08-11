@@ -9,9 +9,8 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(input_device)
 
 # FILE_SUFFIX selects the build variant (e.g. provisioner, mcuboot,
-# mcuboot_provisioner). When the suffix matches *provisioner*, build the user
-# project's provisioner sub-application: thin main in provisioner/ calls the
-# shared provision_data() API from subsys/provisioner.
+# mcuboot_provisioner). When the suffix matches *provisioner*, build
+# provisioner_main.c, which calls provision_data() from subsys/provisioner.
 zephyr_get(FILE_SUFFIX SYSBUILD GLOBAL)
 if(FILE_SUFFIX MATCHES "provisioner")
   add_subdirectory(provisioner)

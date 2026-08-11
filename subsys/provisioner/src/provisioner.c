@@ -18,9 +18,9 @@
 #include <psa/crypto.h>
 #include <psa/internal_trusted_storage.h>
 
-#include "provision_entry.h"
+#include <provisioner/provision_entry.h>
 
-LOG_MODULE_REGISTER(provisioner, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(provisioner, CONFIG_PROVISIONER_LOG_LEVEL);
 
 static int provision_init(void)
 {
@@ -81,14 +81,12 @@ static int provision_validate_rram_erase(const char *name, const void *data,
 }
 
 static int provision_validate_source(const char *name, const void *data,
-				     size_t payload_length, enum provision_data_format format,
-				     size_t storage_length)
+				     size_t payload_length, size_t storage_length)
 {
 	if ((data == NULL) || (payload_length == 0U)) {
 		LOG_ERR("Entry %s: missing source data", name);
 		return -EINVAL;
 	}
-
 
 	return provision_validate_rram_erase(name, data, payload_length, storage_length);
 }
@@ -171,7 +169,7 @@ static int run_provision_its_entries(void)
 		int err;
 
 		err = provision_validate_source(entry->name, entry->data, entry->payload_length,
-						entry->format, entry->storage_length);
+						entry->storage_length);
 		if (err != 0) {
 			return err;
 		}
@@ -213,7 +211,7 @@ static int run_provision_kmu_entries(void)
 		int err;
 
 		err = provision_validate_source(entry->name, entry->data, entry->payload_length,
-						entry->format, entry->storage_length);
+						entry->storage_length);
 		if (err != 0) {
 			return err;
 		}

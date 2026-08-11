@@ -14,7 +14,7 @@
 
 #include <zephyr/sys/util.h>
 
-#include "provision_entry.h"
+#include <provisioner/provision_entry.h>
 
 /** Fast Pair Model ID length (24 bits). */
 #define FP_MODEL_ID_LEN 3U
@@ -36,10 +36,10 @@ BUILD_ASSERT(FP_ANTI_SPOOFING_KEY_B64_STORAGE_LEN % FP_RRAM_WRITE_BLOCK == 0,
 
 /** KMU key id for the Anti-Spoofing private key (RAW usage scheme). */
 #define FP_KMU_KEY_ID                                                                                \
-	PSA_KEY_ID_FROM_CRACEN_KMU_SLOT(CRACEN_KMU_KEY_USAGE_SCHEME_RAW, CONFIG_FP_PROVISION_KMU_SLOT)
+	PSA_KEY_ID_FROM_CRACEN_KMU_SLOT(CRACEN_KMU_KEY_USAGE_SCHEME_RAW, CONFIG_BT_FAST_PAIR_KMU_SLOT)
 
 /** ITS uid for the Fast Pair Model ID. */
-#define FP_ITS_MODEL_ID_UID ((psa_storage_uid_t)CONFIG_FP_PROVISION_ITS_ID)
+#define FP_ITS_MODEL_ID_UID ((psa_storage_uid_t)CONFIG_BT_FAST_PAIR_ITS_ID)
 
 /** KMU lifetime for a read-only CRACEN key. */
 #define FP_KMU_KEY_LIFETIME                                                                            \
@@ -48,17 +48,17 @@ BUILD_ASSERT(FP_ANTI_SPOOFING_KEY_B64_STORAGE_LEN % FP_RRAM_WRITE_BLOCK == 0,
 
 /** Model ID in big-endian wire format (24 bits). */
 static const uint8_t fp_model_id_data[FP_MODEL_ID_LEN] = {
-	((CONFIG_FP_PROVISION_MODEL_ID >> 16) & 0xFF),
-	((CONFIG_FP_PROVISION_MODEL_ID >> 8) & 0xFF),
-	(CONFIG_FP_PROVISION_MODEL_ID & 0xFF),
+	((CONFIG_BT_FAST_PAIR_MODEL_ID >> 16) & 0xFF),
+	((CONFIG_BT_FAST_PAIR_MODEL_ID >> 8) & 0xFF),
+	(CONFIG_BT_FAST_PAIR_MODEL_ID & 0xFF),
 };
 
 /** Base64-encoded Anti-Spoofing key embedded from Kconfig (purged from RRAM after import). */
 static const char fp_anti_spoofing_key_b64[FP_ANTI_SPOOFING_KEY_B64_STORAGE_LEN]
-	__aligned(FP_RRAM_WRITE_BLOCK) = CONFIG_FP_PROVISION_ANTI_SPOOFING_KEY;
+	__aligned(FP_RRAM_WRITE_BLOCK) = CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY;
 
 REGISTER_PROVISION_KMU_ENTRY_SECRET(fp_anti_spoofing_key, fp_anti_spoofing_key_b64,
-				    sizeof(CONFIG_FP_PROVISION_ANTI_SPOOFING_KEY),
+				    sizeof(CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY),
 				    sizeof(fp_anti_spoofing_key_b64),
 				    FP_ANTI_SPOOFING_KEY_BITS, PROVISION_DATA_FORMAT_BASE64,
 				    FP_KMU_KEY_ID,

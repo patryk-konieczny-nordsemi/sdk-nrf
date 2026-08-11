@@ -1,20 +1,17 @@
 #
-# Copyright (c) 2026 Nordic Semiconductor
+# Copyright (c) 2026 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 #
 
 if(NOT CONFIG_PROVISIONER)
-    return()
-    message(WARNING "PROVISIONER DISABLED")
+  message(WARNING "PROVISIONER DISABLED")
+	return()
 endif()
-
-target_include_directories(app PRIVATE
-  ${ZEPHYR_NRF_MODULE_DIR}/subsys/provisioner/include)
 
 target_sources(app PRIVATE
   ${ZEPHYR_NRF_MODULE_DIR}/subsys/provisioner/src/provisioner.c)
-  
+
 zephyr_linker_sources(SECTIONS
   ${ZEPHYR_NRF_MODULE_DIR}/subsys/provisioner/provision_entry.ld)
 

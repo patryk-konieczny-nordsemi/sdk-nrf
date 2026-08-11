@@ -1,13 +1,18 @@
 menuconfig PROVISIONER
 	bool "Runtime provisioner"
+	depends on BUILD_WITH_TFM
+	select FLASH
+	select PSA_CRYPTO
 	help
 	  Build the runtime credential provisioner (KMU/ITS iterable runner).
 	  Enable in provisioner application images only.
-      
+
 if PROVISIONER
+
 config PROVISIONER_LOG_LEVEL
 	int "Provisioner log level"
 	default 3
 	help
 	  Log level for the provisioner module.
+
 endif # PROVISIONER
