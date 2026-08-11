@@ -14,8 +14,7 @@ project(input_device)
 # shared provision_data() API from subsys/provisioner.
 zephyr_get(FILE_SUFFIX SYSBUILD GLOBAL)
 if(FILE_SUFFIX MATCHES "provisioner")
-  include(${ZEPHYR_NRF_MODULE_DIR}/subsys/provisioner/cmake/provisioner_app.cmake)
-  target_sources(app PRIVATE provisioner/provisioner_main.c)
+  add_subdirectory(provisioner)
 else()
   target_sources(app PRIVATE
     src/main.c
