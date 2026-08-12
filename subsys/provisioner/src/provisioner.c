@@ -34,51 +34,6 @@ static int provision_init(void)
 	return 0;
 }
 
-static int provision_validate_rram_erase(const char *name, const void *data,
-					 size_t payload_length, size_t storage_length)
-{
-	const struct device *flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
-	size_t wbs;
-	off_t off;
-
-	if (storage_length == 0U) {
-		return 0;
-	}
-
-	if ((data == NULL) || (payload_length == 0U)) {
-		LOG_ERR("Entry %s: RRAM erase requested without source data", name);
-		return -EINVAL;
-	}
-
-	if (payload_length > storage_length) {
-		LOG_ERR("Entry %s: payload_length %zu exceeds storage_length %zu", name,
-			payload_length, storage_length);
-		return -EINVAL;
-	}
-
-	if (storage_length > PROVISION_RRAM_ERASE_MAX_LEN) {
-		LOG_ERR("Entry %s: storage_length %zu exceeds limit %u", name, storage_length,
-			PROVISION_RRAM_ERASE_MAX_LEN);
-		return -EINVAL;
-	}
-
-	if (!device_is_ready(flash_dev)) {
-		LOG_ERR("Flash device not ready");
-		return -ENODEV;
-	}
-
-	wbs = flash_get_write_block_size(flash_dev);
-	off = (off_t)(uintptr_t)data;
-
-	if ((((size_t)off % wbs) != 0U) || ((storage_length % wbs) != 0U)) {
-		LOG_ERR("Entry %s: RRAM storage region not write-block aligned "
-			"(off %ld, len %zu, wbs %zu)",
-			name, (long)off, storage_length, wbs);
-		return -EINVAL;
-	}
-
-	return 0;
-}
 
 static int provision_validate_source(const char *name, const void *data,
 				     size_t payload_length, size_t storage_length)
@@ -88,7 +43,7 @@ static int provision_validate_source(const char *name, const void *data,
 		return -EINVAL;
 	}
 
-	return provision_validate_rram_erase(name, data, payload_length, storage_length);
+	return 0;
 }
 
 static int purge_sram_secret(void *buf, size_t len)
@@ -187,7 +142,7 @@ static int run_provision_its_entries(void)
 			return -EIO;
 		}
 
-		LOG_INF("Entry %s: provisioned to ITS uid %u", entry->name, (unsigned int)entry->uid);
+		LOG_INF("Entry %s: provisioned to ITS uid: %u", entry->name, (unsigned int)entry->uid);
 
 		if (entry->storage_length != 0U) {
 			err = purge_rram_secret(entry->data, entry->storage_length);
@@ -243,7 +198,7 @@ static int run_provision_kmu_entries(void)
 			return -EIO;
 		}
 
-		LOG_INF("Entry %s: provisioned to KMU", entry->name);
+		LOG_INF("Entry %s: provisioned to KMU id: %d", entry->name, entry->id);
 
 		err = purge_sram_secret(payload, payload_len);
 		if (err != 0) {

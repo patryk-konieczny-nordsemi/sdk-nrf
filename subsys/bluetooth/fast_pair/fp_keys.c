@@ -220,7 +220,11 @@ static int key_gen_public_key(const struct bt_conn *conn,
 	uint8_t priv_key[FP_REG_DATA_ANTI_SPOOFING_PRIV_KEY_LEN];
 	uint8_t ecdh_secret[FP_CRYPTO_ECDH_SHARED_KEY_LEN];
 
+#if defined(BT_FAST_PAIR_PROVISION_PARTITION)
 	err = fp_get_anti_spoofing_priv_key(priv_key, sizeof(priv_key));
+#else
+	err = 0;
+#endif 
 
 	if (!err) {
 		err = fp_crypto_ecdh_shared_secret(ecdh_secret, keygen_params->public_key,
