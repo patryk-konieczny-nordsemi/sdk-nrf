@@ -17,8 +17,6 @@ if(NOT _input_device_app_dir)
   set(_input_device_app_dir ${APP_DIR})
 endif()
 
-set(_prov_prj "${ZEPHYR_NRF_MODULE_DIR}/subsys/provisioner/prj.conf")
-
 string(REGEX MATCH "^mcuboot" _is_mcuboot_family "${FILE_SUFFIX}")
 string(REGEX MATCH "provisioner$" _is_provisioner "${FILE_SUFFIX}")
 
@@ -57,8 +55,6 @@ endif()
 # Provisioner
 # ----------------------------------------------------------------------------
 if(_is_provisioner)
-  add_overlay_config(${DEFAULT_IMAGE} ${_prov_prj})
-
   set_config_bool(${DEFAULT_IMAGE} CONFIG_PROVISIONER y)
 
   set_config_int(${DEFAULT_IMAGE} CONFIG_BT_FAST_PAIR_MODEL_ID

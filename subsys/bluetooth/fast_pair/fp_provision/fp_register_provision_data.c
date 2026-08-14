@@ -14,7 +14,7 @@
 
 #include <zephyr/sys/util.h>
 
-#include <provisioner/provision_entry.h>
+#include <provisioner/provisioner.h>
 
 /** Fast Pair Model ID length (24 bits). */
 #define FP_MODEL_ID_LEN 3U
@@ -57,14 +57,14 @@ static const uint8_t fp_model_id_data[FP_MODEL_ID_LEN] = {
 static const char fp_anti_spoofing_key_b64[FP_ANTI_SPOOFING_KEY_B64_STORAGE_LEN]
 	__aligned(FP_RRAM_WRITE_BLOCK) = CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY;
 
-REGISTER_PROVISION_KMU_ENTRY_SECRET(fp_anti_spoofing_key, fp_anti_spoofing_key_b64,
+PROVISIONER_ENTRY_KMU_REGISTER_SECRET(fp_anti_spoofing_key, fp_anti_spoofing_key_b64,
 				    sizeof(CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY),
 				    sizeof(fp_anti_spoofing_key_b64),
-				    FP_ANTI_SPOOFING_KEY_BITS, PROVISION_DATA_FORMAT_BASE64,
+				    FP_ANTI_SPOOFING_KEY_BITS, PROVISIONER_DATA_FORMAT_BASE64,
 				    FP_KMU_KEY_ID,
 				    PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1),
 				    FP_KMU_KEY_LIFETIME, PSA_KEY_USAGE_DERIVE, PSA_ALG_ECDH);
 
-REGISTER_PROVISION_ITS_ENTRY(fp_model_id, fp_model_id_data, sizeof(fp_model_id_data),
-			     PROVISION_DATA_FORMAT_RAW, FP_ITS_MODEL_ID_UID,
+PROVISIONER_ENTRY_ITS_REGISTER(fp_model_id, fp_model_id_data, sizeof(fp_model_id_data),
+			     PROVISIONER_DATA_FORMAT_RAW, FP_ITS_MODEL_ID_UID,
 			     PSA_STORAGE_FLAG_WRITE_ONCE);

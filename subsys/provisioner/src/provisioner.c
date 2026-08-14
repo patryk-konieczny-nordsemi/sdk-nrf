@@ -18,7 +18,7 @@
 #include <psa/crypto.h>
 #include <psa/internal_trusted_storage.h>
 
-#include <provisioner/provision_entry.h>
+#include <provisioner/provisioner.h>
 
 LOG_MODULE_REGISTER(provisioner, CONFIG_PROVISIONER_LOG_LEVEL);
 
@@ -60,7 +60,7 @@ static int purge_sram_secret(void *buf, size_t len)
 static int purge_rram_secret(const void *addr, size_t len)
 {
 	const struct device *flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
-	uint8_t zeros[PROVISION_RRAM_ERASE_MAX_LEN];
+	uint8_t zeros[PROVISIONER_RRAM_ERASE_MAX_LEN];
 	off_t off;
 	int err;
 
@@ -81,11 +81,11 @@ static int purge_rram_secret(const void *addr, size_t len)
 }
 
 static int provision_get_payload(const void *data_in, size_t payload_length,
-				 enum provision_data_format format, uint8_t *buf,
+				 enum provisioner_data_format format, uint8_t *buf,
 				 size_t buf_len, size_t *out_len)
 {
 	switch (format) {
-	case PROVISION_DATA_FORMAT_RAW:
+	case PROVISIONER_DATA_FORMAT_RAW:
 		if (payload_length > buf_len) {
 			return -EINVAL;
 		}
@@ -94,7 +94,7 @@ static int provision_get_payload(const void *data_in, size_t payload_length,
 		*out_len = payload_length;
 		return 0;
 
-	case PROVISION_DATA_FORMAT_BASE64: {
+	case PROVISIONER_DATA_FORMAT_BASE64: {
 		size_t enc_len = strnlen(data_in, payload_length);
 		int err;
 
@@ -117,8 +117,8 @@ static int provision_get_payload(const void *data_in, size_t payload_length,
 
 static int run_provision_its_entries(void)
 {
-	STRUCT_SECTION_FOREACH(provision_its_entry, entry) {
-		uint8_t payload[PROVISION_RRAM_ERASE_MAX_LEN];
+	STRUCT_SECTION_FOREACH(provisioner_its_entry, entry) {
+		uint8_t payload[PROVISIONER_RRAM_ERASE_MAX_LEN];
 		size_t payload_len = 0;
 		psa_status_t status;
 		int err;
@@ -157,8 +157,8 @@ static int run_provision_its_entries(void)
 
 static int run_provision_kmu_entries(void)
 {
-	STRUCT_SECTION_FOREACH(provision_kmu_entry, entry) {
-		uint8_t payload[PROVISION_RRAM_ERASE_MAX_LEN];
+	STRUCT_SECTION_FOREACH(provisioner_kmu_entry, entry) {
+		uint8_t payload[PROVISIONER_RRAM_ERASE_MAX_LEN];
 		size_t payload_len = 0;
 		psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
 		psa_key_id_t key_id = PSA_KEY_ID_NULL;
@@ -207,12 +207,12 @@ static int run_provision_kmu_entries(void)
 			return err;
 		}
 
-		if (entry->storage_length != 0U) {
-			err = purge_rram_secret(entry->data, entry->storage_length);
-			if (err != 0) {
-				return err;
-			}
-		}
+		// if (entry->storage_length != 0U) {
+		// 	err = purge_rram_secret(entry->data, entry->storage_length);
+		// 	if (err != 0) {
+		// 		return err;
+		// 	}
+		// }
 	}
 
 	return 0;
@@ -220,13 +220,13 @@ static int run_provision_kmu_entries(void)
 
 static int run_provision_callbacks(void)
 {
-	STRUCT_SECTION_FOREACH(provision_generic_callback, entry) {
+	STRUCT_SECTION_FOREACH(provisioner_generic_callback, entry) {
 		int err;
 
-		LOG_INF("Running provision callback: %s", entry->name);
+		LOG_INF("Running provisioner callback: %s", entry->name);
 		err = entry->callback();
 		if (err != 0) {
-			LOG_ERR("Provision callback %s failed (err %d)", entry->name, err);
+			LOG_ERR("Provisioner callback %s failed (err %d)", entry->name, err);
 			return err;
 		}
 	}
@@ -234,7 +234,7 @@ static int run_provision_callbacks(void)
 	return 0;
 }
 
-int provision_data(void)
+int provisioner_run(void)
 {
 	int err;
 

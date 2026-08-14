@@ -3,18 +3,11 @@
 #
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 #
+zephyr_library_named(provisioner)
+zephyr_library_sources(src/provisioner.c)
+zephyr_library_include_directories(${ZEPHYR_NRF_MODULE_DIR}/include)
 
-if(NOT CONFIG_PROVISIONER)
-  message(WARNING "PROVISIONER DISABLED")
-	return()
-endif()
+zephyr_linker_sources(SECTIONS provisioner_entry.ld)
 
-target_sources(app PRIVATE
-  ${ZEPHYR_NRF_MODULE_DIR}/subsys/provisioner/src/provisioner.c)
-
-zephyr_linker_sources(SECTIONS
-  ${ZEPHYR_NRF_MODULE_DIR}/subsys/provisioner/provision_entry.ld)
-
-if(CONFIG_FP_PROVISION_DATA)
-  add_subdirectory(${ZEPHYR_NRF_MODULE_DIR}/subsys/bluetooth/fast_pair/fp_provision fp_provision)
-endif()
+zephyr_library_sources_ifdef(CONFIG_FP_PROVISION_DATA
+    ${ZEPHYR_NRF_MODULE_DIR}/subsys/bluetooth/fast_pair/fp_provision/fp_register_provision_data.c)
