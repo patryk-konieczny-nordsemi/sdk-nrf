@@ -1,7 +1,6 @@
 menuconfig PROVISIONER
 	bool "Runtime provisioner"
 	depends on BUILD_WITH_TFM
-	select FLASH
 	select PSA_CRYPTO
 	select BASE64
 	help
