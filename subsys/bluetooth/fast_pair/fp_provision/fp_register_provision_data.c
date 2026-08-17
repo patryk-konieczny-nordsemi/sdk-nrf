@@ -16,18 +16,10 @@
 
 #include <provisioner/provisioner.h>
 
-/** Fast Pair Model ID length (24 bits). */
-#define FP_MODEL_ID_LEN 3U
-
-/** Anti-Spoofing private key length (256 bits). */
-#define FP_ANTI_SPOOFING_KEY_LEN 32U
-
-/** ITS uid for the Fast Pair Model ID. */
-#define FP_ITS_MODEL_ID_UID ((psa_storage_uid_t)CONFIG_BT_FAST_PAIR_ITS_ID)                                                                     \
-	
+#include "fp_registration_data.h"
 
 /** Model ID in big-endian wire format (24 bits). */
-static const uint8_t fp_model_id_data[FP_MODEL_ID_LEN] = {
+static const uint8_t fp_model_id_data[FP_REG_DATA_MODEL_ID_LEN] = {
 	((CONFIG_BT_FAST_PAIR_MODEL_ID >> 16) & 0xFF),
 	((CONFIG_BT_FAST_PAIR_MODEL_ID >> 8) & 0xFF),
 	(CONFIG_BT_FAST_PAIR_MODEL_ID & 0xFF),
@@ -42,7 +34,7 @@ static const provisioner_data fp_model_id_provision = {
 
 /** Model ID ITS settings */
 static const provisioner_its_config fp_model_id_provision_conf = {
-	.uid = FP_ITS_MODEL_ID_UID,
+	.uid = CONFIG_BT_FAST_PAIR_ITS_ID,
 	.create_flags = PSA_STORAGE_FLAG_WRITE_ONCE,
 };
 
@@ -58,7 +50,7 @@ static const provisioner_data fp_anti_spoofing_key_provision = {
 
 /** Anti-Spoofing Private Key KMU settings */
 static const provisioner_kmu_config fp_anti_spoofing_key_provision_conf = {
-	.key_bits = (FP_ANTI_SPOOFING_KEY_LEN * CHAR_BIT),
+	.key_bits = (FP_REG_DATA_ANTI_SPOOFING_PRIV_KEY_LEN * CHAR_BIT),
 	.id = PSA_KEY_ID_FROM_CRACEN_KMU_SLOT(CRACEN_KMU_KEY_USAGE_SCHEME_RAW, CONFIG_BT_FAST_PAIR_KMU_SLOT),
 	.type = PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1),
 	.lifetime = PSA_KEY_LIFETIME_FROM_PERSISTENCE_AND_LOCATION(

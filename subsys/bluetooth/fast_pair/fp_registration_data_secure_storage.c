@@ -108,25 +108,6 @@ int fp_reg_data_get_model_id(uint8_t *buf, size_t size)
 	return 0;
 }
 
-int fp_get_anti_spoofing_priv_key(uint8_t *buf, size_t size)
-{
-	__ASSERT_NO_MSG(bt_fast_pair_is_ready());
-
-	if (size < FP_REG_DATA_ANTI_SPOOFING_PRIV_KEY_LEN) {
-		return -EINVAL;
-	}
-
-	/* The Anti-Spoofing key never leaves the KMU in plaintext. The crypto
-	* backend references it by its KMU handle (see fp_crypto_psa.c), so the
-	* caller only receives zeroed memory here.
-	*/
-	memset(buf, 0, size);
-	LOG_DBG("Anti-Spoofing key stays in KMU slot %d - no plaintext key returned",
-		CONFIG_BT_FAST_PAIR_KMU_SLOT);
-
-	return 0;
-}
-
 static int fp_reg_data_init(void)
 {
 	if (is_enabled) {
