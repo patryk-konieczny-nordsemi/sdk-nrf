@@ -5,8 +5,6 @@
 #
 
 source "Kconfig.zephyr"
-source "$(ZEPHYR_NRF_MODULE_DIR)/subsys/provisioner/Kconfig"
-source "$(ZEPHYR_NRF_MODULE_DIR)/subsys/bluetooth/fast_pair/fp_provision/Kconfig.fp_provision"
 
 config SETTINGS
 	default y if BT_FAST_PAIR

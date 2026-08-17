@@ -195,7 +195,7 @@ int fp_crypto_aes128_ecb_decrypt(uint8_t *out, const uint8_t *in, const uint8_t 
 	return fp_crypto_aes128_ecb_crypt(out, in, k, false);
 }
 
-#if defined(BT_FAST_PAIR_PROVISION_PARTITION)
+#if defined(CONFIG_BT_FAST_PAIR_PROVISION_PARTITION)
 static psa_key_id_t import_ecdh_priv_key(const uint8_t *data)
 {
 	/* SECP-R1 256-bit private key (256 bits = 32 bytes). */
@@ -221,7 +221,7 @@ static psa_key_id_t import_ecdh_priv_key(const uint8_t *data)
 
 	return key_id;
 }
-#endif /* BT_FAST_PAIR_PROVISION_PARTITION */
+#endif /* CONFIG_BT_FAST_PAIR_PROVISION_PARTITION */
 
 static int fp_crypto_psa_ecdh_shared_secret(uint8_t *secret_key, const uint8_t *public_key,
 				     psa_key_id_t priv_key_id)

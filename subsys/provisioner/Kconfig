@@ -13,4 +13,6 @@ module = PROVISIONER
 module-str = Provisioner subsystem
 source "$(ZEPHYR_BASE)/subsys/logging/Kconfig.template.log_config"
 
+source "$(ZEPHYR_NRF_MODULE_DIR)/subsys/bluetooth/fast_pair/fp_provision/Kconfig.fp_provision"
+
 endif # PROVISIONER
