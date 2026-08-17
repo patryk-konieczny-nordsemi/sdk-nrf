@@ -49,6 +49,7 @@ rsource "fp_crypto/Kconfig.fp_crypto"
 rsource "fp_storage/Kconfig.fp_storage"
 rsource "fhn/Kconfig"
 rsource "adv_manager/Kconfig"
+rsource "Kconfig.credentials"
 
 config BT_FAST_PAIR_ACTIVATION
 	bool
@@ -147,7 +148,53 @@ config BT_FAST_PAIR_REGISTRATION_DATA_INIT_PRIORITY
 	  This module should be initialized before all other Fast Pair modules to avoid using
 	  Fast Pair subsystem when the Fast Pair provisioning data is not configured properly.
 
+choice BT_FAST_PAIR_PROVISION_SOURCE
+	prompt "Fast Pair provisioning data source"
+	depends on BT_FAST_PAIR_REGISTRATION_DATA
+	default BT_FAST_PAIR_PROVISION_PARTITION
+
+	config BT_FAST_PAIR_PROVISION_PARTITION
+		bool "Provision Fast Pair data in the bt_fast_pair partition"
+		help
+		  Source the Fast Pair provisioning data (Model ID and Anti-Spoofing
+		  private key) from the dedicated bt_fast_pair flash partition.
+		  This is the default, portable option. Note that the Anti-Spoofing
+		  private key resides in the partition in plaintext.
+
+	config BT_FAST_PAIR_PROVISION_SECURE_STORAGE
+		bool "Provision Fast Pair data into KMU and Internal Trusted Storage [EXPERIMENTAL]"
+		depends on BT_FAST_PAIR_CRYPTO_PSA
+		select EXPERIMENTAL
+		help
+		  Source the Fast Pair provisioning data from hardware-protected storage
+		  instead of the bt_fast_pair flash partition:
+		  	- the Anti-Spoofing private key from a CRACEN KMU slot
+		  	(see BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY_KMU_SLOT),
+		  	- the Model ID from PSA Internal Trusted Storage
+		  	(see BT_FAST_PAIR_MODEL_ID_ITS_ID).
+		  Credentials must be written by a runtime provisioner image (for example
+		  FILE_SUFFIX=provisioner) before the main application runs. After
+		  provisioning, embedded secrets are erased from non-secure RRAM where
+		  applicable.
+		  This feature is only supported on the non-secure (TF-M) build with the
+		  PSA crypto backend.
+
+endchoice
+
 endif # BT_FAST_PAIR_REGISTRATION_DATA
+
+config BT_FAST_PAIR_RUNTIME_PROVISIONER
+	bool "Fast Pair runtime provisioner registrations"
+	depends on BT_FAST_PAIR_PROVISION_SECURE_STORAGE
+	select PROVISIONER
+	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
+	select PSA_WANT_ECC_SECP_R1_256
+	select PSA_WANT_ALG_ECDH
+	help
+	  Registers Fast Pair Model ID / Anti-Spoofing key into ITS/KMU via
+	  the generic provisioner runner. Used in FILE_SUFFIX=provisioner builds.
+	  Set by sysbuild when SB_CONFIG_BT_FAST_PAIR_RUNTIME_PROVISIONER is enabled.
+	  Sysbuild also enables CONFIG_BT and CONFIG_BT_FAST_PAIR on provisioner images.
 
 config BT_FAST_PAIR_BATTERY
 	bool
