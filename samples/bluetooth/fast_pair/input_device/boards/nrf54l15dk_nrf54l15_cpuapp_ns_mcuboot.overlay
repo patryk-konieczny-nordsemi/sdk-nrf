@@ -1,0 +1,96 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+ */
+
+/*
+ * Flash layout for the MCUboot-enabled /ns (TF-M) build (FILE_SUFFIX=mcuboot).
+ *
+ * Slot sizes are derived from the standard TF-M /ns build footprint with
+ * headroom for DFU growth and debug builds, aligned to the 4 KB TrustZone
+ * flash region granularity:
+ *
+ */
+
+/ {
+	chosen {
+		zephyr,code-partition = &slot0_ns_partition;
+	};
+};
+
+&cpuapp_rram {
+	/delete-node/ partitions;
+
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "mcuboot";
+			reg = <0x0 DT_SIZE_K(64)>;
+		};
+
+		tfm_storage_partition: partition@10000 {
+			compatible = "zephyr,mapped-partition";
+			label = "tfm-storage";
+			reg = <0x10000 DT_SIZE_K(40)>;
+			ranges = <0x0 0x10000 DT_SIZE_K(40)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			tfm_its_partition: partition@0 {
+				compatible = "zephyr,mapped-partition";
+				label = "tfm-its";
+				reg = <0x0 DT_SIZE_K(16)>;
+			};
+
+			tfm_otp_partition: partition@4000 {
+				compatible = "zephyr,mapped-partition";
+				label = "tfm-otp";
+				reg = <0x4000 DT_SIZE_K(8)>;
+			};
+
+			tfm_ps_partition: partition@6000 {
+				compatible = "zephyr,mapped-partition";
+				label = "tfm-ps";
+				reg = <0x6000 DT_SIZE_K(16)>;
+			};
+		};
+
+		slot0_partition: partition@1a000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x1a000 DT_SIZE_K(512)>;
+			ranges = <0x0 0x1a000 DT_SIZE_K(512)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			slot0_s_partition: partition@0 {
+				compatible = "zephyr,mapped-partition";
+				label = "image-0-secure";
+				reg = <0x0 DT_SIZE_K(128)>;
+			};
+
+			slot0_ns_partition: partition@20000 {
+				compatible = "zephyr,mapped-partition";
+				label = "image-0-nonsecure";
+				reg = <0x20000 DT_SIZE_K(384)>;
+			};
+		};
+
+		slot1_partition: partition@9a000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1";
+			reg = <0x9a000 DT_SIZE_K(512)>;
+		};
+
+		storage_partition: partition@11a000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x11a000 DT_SIZE_K(20)>;
+		};
+	};
+};

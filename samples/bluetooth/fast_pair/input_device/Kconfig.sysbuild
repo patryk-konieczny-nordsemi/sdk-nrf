@@ -1,11 +1,13 @@
 #
-# Copyright (c) 2023-2025 Nordic Semiconductor
+# Copyright (c) 2023-2026 Nordic Semiconductor
 #
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 #
 
 config PARTITION_MANAGER
 	default n
+
+menu "Fast Pair credentials"
 
 config BT_FAST_PAIR_MODEL_ID
 	default 0x2A410B
@@ -14,6 +16,16 @@ config BT_FAST_PAIR_MODEL_ID
 # The following key is only used for demonstration purposes and must not be used in production.
 config BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY
 	default "Unoh+nycK/ZJ7k3dHsdcNpiP1SfOy0P/Lx5XixyYois="
+
+endmenu
+
+config BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY_KMU_SLOT
+	int "CRACEN KMU slot for the Anti-Spoofing private key"
+	default 30
+
+config BT_FAST_PAIR_MODEL_ID_ITS_ID
+	int "PSA Internal Trusted Storage UID for the Model ID"
+	default 2000
 
 config NRF_DEFAULT_IPC_RADIO
 	default y

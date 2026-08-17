@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2024 Nordic Semiconductor
+# Copyright (c) 2024 - 2026 Nordic Semiconductor
 #
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 #
@@ -7,10 +7,10 @@
 source "Kconfig.zephyr"
 
 config SETTINGS
-	default y
+	default y if BT_FAST_PAIR
 
 config ZMS
-	default y if (SOC_FLASH_NRF_RRAM || SOC_FLASH_NRF_MRAM)
+	default y if BT_FAST_PAIR && (SOC_FLASH_NRF_RRAM || SOC_FLASH_NRF_MRAM)
 
 config NVS
-	default y if !(SOC_FLASH_NRF_RRAM || SOC_FLASH_NRF_MRAM)
+	default y if BT_FAST_PAIR && !(SOC_FLASH_NRF_RRAM || SOC_FLASH_NRF_MRAM)
