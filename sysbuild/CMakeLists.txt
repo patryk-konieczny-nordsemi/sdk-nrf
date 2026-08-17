@@ -1239,6 +1239,8 @@ function(${SYSBUILD_CURRENT_MODULE_NAME}_post_cmake)
     -----------------------------------------------------------------------------------
     ")
   endif()
+
+  include(${ZEPHYR_NRF_MODULE_DIR}/subsys/provisioner/sysbuild.cmake)
 endfunction(${SYSBUILD_CURRENT_MODULE_NAME}_post_cmake)
 
 list(APPEND CMAKE_MODULE_PATH ${ZEPHYR_NRF_MODULE_DIR}/cmake/sysbuild/modules)

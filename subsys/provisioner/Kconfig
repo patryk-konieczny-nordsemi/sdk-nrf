@@ -14,3 +14,35 @@ module-str = Provisioner subsystem
 source "$(ZEPHYR_BASE)/subsys/logging/Kconfig.template.log_config"
 
 endif # PROVISIONER
+
+config PROVISIONER_SANITIZE_HEX
+	bool "Generate offline sanitize Intel HEX after build"
+	depends on PROVISIONER
+	default n
+	help
+	  Build produces sanitize_ns_slot.hex for factory use after runtime
+	  provisioning. Programs 0xFF over selected slot regions from devicetree.
+
+config PROVISIONER_SANITIZE_SLOT0_NS
+	bool "Include slot0_ns_partition"
+	depends on PROVISIONER && PROVISIONER_SANITIZE_HEX
+	default y
+	help
+	  Non-secure application slot. Correct default for TF-M /ns builds with
+	  split slot0_s and slot0_ns partitions (MCUboot and non-MCUboot).
+
+config PROVISIONER_SANITIZE_SLOT1
+	bool "Include slot1_partition (MCUboot secondary slot)"
+	depends on PROVISIONER && PROVISIONER_SANITIZE_HEX && BOOTLOADER_MCUBOOT
+	default n
+	help
+	  Optional. Erases entire secondary slot; use if a copy of the
+	  provisioner image could exist in slot1.
+
+config PROVISIONER_SANITIZE_SLOT0_FULL
+	bool "Include full slot0_partition (secure + non-secure)"
+	depends on PROVISIONER && PROVISIONER_SANITIZE_HEX && BOOTLOADER_MCUBOOT
+	default n
+	help
+	  Optional. Overwrites the whole primary MCUboot slot including TF-M
+	  secure image. Only use when followed by a full reflash of all images.

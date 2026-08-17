@@ -57,6 +57,10 @@ endif()
 if(_is_provisioner)
   set_config_bool(${DEFAULT_IMAGE} CONFIG_PROVISIONER y)
 
+  if(_is_mcuboot_family)
+    set_config_bool(${DEFAULT_IMAGE} CONFIG_BOOTLOADER_MCUBOOT y)
+  endif()
+
   set_config_int(${DEFAULT_IMAGE} CONFIG_BT_FAST_PAIR_MODEL_ID
     ${SB_CONFIG_BT_FAST_PAIR_MODEL_ID})
   set_config_string(${DEFAULT_IMAGE} CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY
