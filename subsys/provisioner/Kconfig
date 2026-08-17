@@ -1,0 +1,30 @@
+#
+# Copyright (c) 2026 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+#
+
+menuconfig PROVISIONER
+	bool "Runtime provisioner"
+	default n
+	select PSA_CRYPTO
+	select BASE64
+	help
+	  Enable the runtime credential provisioner (KMU/ITS iterable runner).
+	  Enable in provisioner application images only.
+
+if PROVISIONER
+
+config PROVISIONER_MAX_DATA_SIZE
+	int "Provisioner entry max data size"
+	default 1024
+	help
+	  Sets the buffer size used for provisioing
+	  Limits the maximum size of a single data entry
+
+
+module = PROVISIONER
+module-str = Provisioner subsystem
+source "$(ZEPHYR_BASE)/subsys/logging/Kconfig.template.log_config"
+
+endif # PROVISIONER
