@@ -8,11 +8,7 @@ cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(input_device)
 
-# FILE_SUFFIX selects the build variant (e.g. provisioner, mcuboot,
-# mcuboot_provisioner). When the suffix matches *provisioner*, build
-# provisioner_main.c, which calls provision_data() from subsys/provisioner.
-zephyr_get(FILE_SUFFIX SYSBUILD GLOBAL)
-if(FILE_SUFFIX MATCHES "provisioner")
+if(CONFIG_PROVISIONER)
   add_subdirectory(provisioner)
 else()
   target_sources(app PRIVATE

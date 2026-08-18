@@ -17,28 +17,18 @@ if(NOT _input_device_app_dir)
   set(_input_device_app_dir ${APP_DIR})
 endif()
 
-string(REGEX MATCH "^mcuboot" _is_mcuboot_family "${FILE_SUFFIX}")
-string(REGEX MATCH "provisioner$" _is_provisioner "${FILE_SUFFIX}")
-
 # ----------------------------------------------------------------------------
 # Validation
 # ----------------------------------------------------------------------------
-if(_is_provisioner AND NOT SB_CONFIG_BOARD_IS_NON_SECURE)
-  message(FATAL_ERROR
-    "FILE_SUFFIX=${FILE_SUFFIX} requires a non-secure TF-M board target "
-    "(e.g. nrf54l15dk/nrf54l15/cpuapp/ns). Current board: ${BOARD}")
-endif()
-
-if(_is_mcuboot_family AND NOT SB_CONFIG_BOOTLOADER_MCUBOOT)
-  message(FATAL_ERROR
-    "FILE_SUFFIX=${FILE_SUFFIX} requires MCUboot sysbuild configuration")
+if(SB_CONFIG_APP_PROVISIONER AND NOT SB_CONFIG_BOARD_IS_NON_SECURE)
+  message(FATAL_ERROR "Runtime provisioner app not supported in secure builds: non-secure TF-M required")
 endif()
 
 # ----------------------------------------------------------------------------
 # /ns main application (not provisioner)
 # KMU/ITS slot values: Kconfig.sysbuild (SB_CONFIG_BT_FAST_PAIR_*).
 # ----------------------------------------------------------------------------
-if(NOT _is_provisioner AND SB_CONFIG_BOARD_IS_NON_SECURE AND "${BOARD}" MATCHES "nrf54l15")
+if(NOT SB_CONFIG_APP_PROVISIONER AND SB_CONFIG_BOARD_IS_NON_SECURE)
   set_config_bool(${DEFAULT_IMAGE} CONFIG_BT_FAST_PAIR_PROVISION_SECURE_STORAGE y)
 
   set_config_int(${DEFAULT_IMAGE} CONFIG_BT_FAST_PAIR_KMU_SLOT
@@ -50,7 +40,7 @@ endif()
 # ----------------------------------------------------------------------------
 # Provisioner
 # ----------------------------------------------------------------------------
-if(_is_provisioner)
+if(SB_CONFIG_APP_PROVISIONER)
   set_config_bool(${DEFAULT_IMAGE} CONFIG_PROVISIONER y)
 
   set_config_int(${DEFAULT_IMAGE} CONFIG_BT_FAST_PAIR_MODEL_ID
@@ -61,4 +51,6 @@ if(_is_provisioner)
     ${SB_CONFIG_BT_FAST_PAIR_KMU_SLOT})
   set_config_int(${DEFAULT_IMAGE} CONFIG_BT_FAST_PAIR_ITS_ID
     ${SB_CONFIG_BT_FAST_PAIR_ITS_ID})
+else()
+  set_config_bool(${DEFAULT_IMAGE} CONFIG_PROVISIONER n)
 endif()

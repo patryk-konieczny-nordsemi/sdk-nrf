@@ -30,4 +30,12 @@ config BT_FAST_PAIR_ITS_ID
 config NRF_DEFAULT_IPC_RADIO
 	default y
 
+config APP_PROVISIONER
+	bool "Build the runtime provisioner app"
+	depends on BOARD_IS_NON_SECURE
+	default n
+	help
+	  Build the runtime credential provisioner instead of the main HID app.
+	  Only valid on TF-M non-secure (/ns) targets.
+
 source "share/sysbuild/Kconfig"

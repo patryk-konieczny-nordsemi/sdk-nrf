@@ -10,12 +10,6 @@ cmake_minimum_required(VERSION 3.20.0)
 set(SB_APPLICATION_CONFIG_DIR
     "${CMAKE_CURRENT_LIST_DIR}/configuration/\${NORMALIZED_BOARD_TARGET}")
 
-# Promote FILE_SUFFIX to a typed cache entry so sysbuild forwards it to images.
-if(DEFINED FILE_SUFFIX)
-  set(FILE_SUFFIX "${FILE_SUFFIX}" CACHE STRING
-      "Sysbuild/application file suffix (e.g. mcuboot, provisioner)" FORCE)
-endif()
-
 find_package(Sysbuild REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 project(sysbuild LANGUAGES)

@@ -32,7 +32,7 @@ LOG_MODULE_DECLARE(fast_pair, CONFIG_BT_FAST_PAIR_LOG_LEVEL);
 
 /* Handle of the Anti-Spoofing private key in the KMU (RAW usage scheme). */
 #define FP_KMU_KEY_ID \
-	PSA_KEY_ID_FROM_CRACEN_KMU_SLOT(
+	PSA_KEY_ID_FROM_CRACEN_KMU_SLOT(	\
 		CRACEN_KMU_KEY_USAGE_SCHEME_RAW, CONFIG_BT_FAST_PAIR_KMU_SLOT)
 
 /* Internal Trusted Storage uid holding the Model ID. */
