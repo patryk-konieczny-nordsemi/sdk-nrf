@@ -63,3 +63,5 @@ add_subdirectory_ifdef(CONFIG_NRF_COMPRESS nrf_compress)
 add_subdirectory(mgmt/mcumgr)
 add_subdirectory_ifdef(CONFIG_SETTINGS settings)
 add_subdirectory_ifdef(CONFIG_PROVISIONER provisioner)
+add_subdirectory_ifdef(CONFIG_FP_PROVISION_DATA
+  bluetooth/fast_pair/fp_provision)

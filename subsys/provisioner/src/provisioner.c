@@ -13,13 +13,12 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/base64.h>
 #include <zephyr/sys/util.h>
+#include <mbedtls/platform_util.h>
 
 #include <psa/crypto.h>
 #include <psa/internal_trusted_storage.h>
 
 #include <provisioner/provisioner.h>
-
-#define PROVISIONER_MAX_DATA_SIZE 1024
 
 LOG_MODULE_REGISTER(provisioner, CONFIG_PROVISIONER_LOG_LEVEL);
 
@@ -35,39 +34,32 @@ static int provision_init(void)
 	return 0;
 }
 
-static int purge_sram_secret(void *buf, size_t len)
+static int provision_payload_get(struct provisioner_data *prov_data, uint8_t *buf,
+				 size_t buf_len, size_t *out_len)
 {
-	if ((buf == NULL) || (len == 0U)) {
+	if(prov_data == NULL || prov_data->data == NULL || buf == NULL || out_len == NULL){
 		return -EINVAL;
 	}
 
-	memset(buf, 0, len);
-
-	return 0;
-}
-
-static int provision_get_payload(provisioner_data prov_data, uint8_t *buf,
-				 size_t buf_len, size_t *out_len)
-{
-	switch (prov_data.format) {
+	switch (prov_data->format) {
 	case PROVISIONER_DATA_FORMAT_RAW:
-		if (prov_data.payload_length > buf_len) {
+		if (prov_data->payload_length > buf_len) {
 			return -EINVAL;
 		}
 
-		memcpy(buf, prov_data.data, prov_data.payload_length);
-		*out_len = prov_data.payload_length;
+		memcpy(buf, prov_data->data, prov_data->payload_length);
+		*out_len = prov_data->payload_length;
 		return 0;
 
 	case PROVISIONER_DATA_FORMAT_BASE64: {
-		size_t enc_len = strnlen(prov_data.data, prov_data.payload_length);
+		size_t enc_len = strnlen(prov_data->data, prov_data->payload_length);
 		int err;
 
 		if (enc_len == 0U) {
 			return -EINVAL;
 		}
 
-		err = base64_decode(buf, buf_len, out_len, prov_data.data, enc_len);
+		err = base64_decode(buf, buf_len, out_len, prov_data->data, enc_len);
 		if (err != 0) {
 			return -EINVAL;
 		}
@@ -80,15 +72,15 @@ static int provision_get_payload(provisioner_data prov_data, uint8_t *buf,
 	}
 }
 
-static int run_provision_its_entries(void)
+static int provision_its_entries_run(void)
 {
 	STRUCT_SECTION_FOREACH(provisioner_its_entry, entry) {
-		uint8_t payload[PROVISIONER_MAX_DATA_SIZE];
+		uint8_t payload[CONFIG_PROVISIONER_MAX_DATA_SIZE];
 		size_t payload_len = 0;
 		psa_status_t status;
 		int err;
 
-		err = provision_get_payload(entry->prov_data, payload, sizeof(payload), &payload_len);
+		err = provision_payload_get(&(entry->prov_data), payload, sizeof(payload), &payload_len);
 		if (err != 0) {
 			LOG_ERR("Entry %s: invalid payload (err %d)", entry->name, err);
 			return err;
@@ -102,28 +94,23 @@ static int run_provision_its_entries(void)
 
 		LOG_INF("Entry %s: provisioned to ITS uid: %u", entry->name, (unsigned int)entry->config.uid);
 
-		err = purge_sram_secret(payload, payload_len);
-		if (err != 0) {
-			LOG_ERR("Entry %s: failed to purge decoded key from SRAM (err %d)",
-				entry->name, err);
-			return err;
-		}
+		mbedtls_platform_zeroize(payload, payload_len);
 	}
 
 	return 0;
 }
 
-static int run_provision_kmu_entries(void)
+static int provision_kmu_entries_run(void)
 {
 	STRUCT_SECTION_FOREACH(provisioner_kmu_entry, entry) {
-		uint8_t payload[PROVISIONER_MAX_DATA_SIZE];
+		uint8_t payload[CONFIG_PROVISIONER_MAX_DATA_SIZE];
 		size_t payload_len = 0;
 		psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
 		psa_key_id_t key_id = PSA_KEY_ID_NULL;
 		psa_status_t status;
 		int err;
 
-		err = provision_get_payload(entry->prov_data, payload, sizeof(payload), &payload_len);
+		err = provision_payload_get(&(entry->prov_data), payload, sizeof(payload), &payload_len);
 		if (err != 0) {
 			LOG_ERR("Entry %s: invalid payload (err %d)", entry->name, err);
 			return err;
@@ -151,12 +138,7 @@ static int run_provision_kmu_entries(void)
 
 		LOG_INF("Entry %s: provisioned to KMU id: %d", entry->name, (unsigned int)entry->config.id);
 
-		err = purge_sram_secret(payload, payload_len);
-		if (err != 0) {
-			LOG_ERR("Entry %s: failed to purge decoded key from SRAM (err %d)",
-				entry->name, err);
-			return err;
-		}
+		mbedtls_platform_zeroize(payload, payload_len);
 	}
 
 	return 0;
@@ -173,12 +155,12 @@ int provisioner_run(void)
 		return err;
 	}
 
-	err = run_provision_kmu_entries();
+	err = provision_kmu_entries_run();
 	if (err != 0) {
 		return err;
 	}
 
-	err = run_provision_its_entries();
+	err = provision_its_entries_run();
 	if (err != 0) {
 		return err;
 	}
