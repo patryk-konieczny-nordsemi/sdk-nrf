@@ -224,7 +224,7 @@ static int key_gen_public_key(const struct bt_conn *conn,
 	err = fp_get_anti_spoofing_priv_key(priv_key, sizeof(priv_key));
 #else
 	err = 0;
-#endif 
+#endif
 
 	if (!err) {
 		err = fp_crypto_ecdh_shared_secret(ecdh_secret, keygen_params->public_key,

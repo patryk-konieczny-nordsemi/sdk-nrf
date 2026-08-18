@@ -96,4 +96,3 @@ tests:
       - ci_samples_bluetooth
     extra_args:
       - FILE_SUFFIX=mcuboot_provisioner
-

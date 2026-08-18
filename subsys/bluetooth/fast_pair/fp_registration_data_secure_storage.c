@@ -25,14 +25,15 @@ LOG_MODULE_DECLARE(fast_pair, CONFIG_BT_FAST_PAIR_LOG_LEVEL);
 #include "fp_registration_data.h"
 
 /* Length of an exported SECP-R1 256-bit public key in uncompressed form
-* (0x04 || X || Y). Only used to size the scratch buffer for the key usability
-* check.
-*/
+ * (0x04 || X || Y). Only used to size the scratch buffer for the key usability
+ * check.
+ */
 #define FP_ECC_PUB_KEY_LEN	65U
 
 /* Handle of the Anti-Spoofing private key in the KMU (RAW usage scheme). */
 #define FP_KMU_KEY_ID \
-	PSA_KEY_ID_FROM_CRACEN_KMU_SLOT(CRACEN_KMU_KEY_USAGE_SCHEME_RAW, CONFIG_BT_FAST_PAIR_KMU_SLOT)
+	PSA_KEY_ID_FROM_CRACEN_KMU_SLOT(
+		CRACEN_KMU_KEY_USAGE_SCHEME_RAW, CONFIG_BT_FAST_PAIR_KMU_SLOT)
 
 /* Internal Trusted Storage uid holding the Model ID. */
 #define FP_ITS_MODEL_ID_UID	((psa_storage_uid_t)CONFIG_BT_FAST_PAIR_ITS_ID)
@@ -135,4 +136,3 @@ static int fp_reg_data_uninit(void)
 
 FP_ACTIVATION_MODULE_REGISTER(fp_reg_data, CONFIG_BT_FAST_PAIR_REGISTRATION_DATA_INIT_PRIORITY,
 				fp_reg_data_init, fp_reg_data_uninit);
- 

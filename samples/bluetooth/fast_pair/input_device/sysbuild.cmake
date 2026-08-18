@@ -31,8 +31,7 @@ endif()
 
 if(_is_mcuboot_family AND NOT SB_CONFIG_BOOTLOADER_MCUBOOT)
   message(FATAL_ERROR
-    "FILE_SUFFIX=${FILE_SUFFIX} requires MCUboot sysbuild configuration "
-    "(sysbuild_mcuboot_base.conf via sysbuild/CMakeLists.txt).")
+    "FILE_SUFFIX=${FILE_SUFFIX} requires MCUboot sysbuild configuration")
 endif()
 
 # ----------------------------------------------------------------------------
@@ -40,11 +39,8 @@ endif()
 # KMU/ITS slot values: Kconfig.sysbuild (SB_CONFIG_BT_FAST_PAIR_*).
 # ----------------------------------------------------------------------------
 if(NOT _is_provisioner AND SB_CONFIG_BOARD_IS_NON_SECURE AND "${BOARD}" MATCHES "nrf54l15")
-  if(_is_mcuboot_family)
-    set_config_bool(${DEFAULT_IMAGE} CONFIG_BOOTLOADER_MCUBOOT y)
-  endif()
-
   set_config_bool(${DEFAULT_IMAGE} CONFIG_BT_FAST_PAIR_PROVISION_SECURE_STORAGE y)
+
   set_config_int(${DEFAULT_IMAGE} CONFIG_BT_FAST_PAIR_KMU_SLOT
     ${SB_CONFIG_BT_FAST_PAIR_KMU_SLOT})
   set_config_int(${DEFAULT_IMAGE} CONFIG_BT_FAST_PAIR_ITS_ID
