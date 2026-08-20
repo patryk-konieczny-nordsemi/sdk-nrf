@@ -34,7 +34,7 @@ static const struct provisioner_data fp_model_id_provision = {
 
 /** Model ID ITS settings */
 static const struct provisioner_its_config fp_model_id_provision_conf = {
-	.uid = CONFIG_BT_FAST_PAIR_ITS_ID,
+	.uid = CONFIG_BT_FAST_PAIR_MODEL_ID_ITS_ID,
 	.create_flags = PSA_STORAGE_FLAG_WRITE_ONCE,
 };
 
@@ -52,7 +52,8 @@ static const struct provisioner_data fp_anti_spoofing_key_provision = {
 static const struct provisioner_kmu_config fp_anti_spoofing_key_provision_conf = {
 	.key_bits = (FP_REG_DATA_ANTI_SPOOFING_PRIV_KEY_LEN * CHAR_BIT),
 	.id = PSA_KEY_ID_FROM_CRACEN_KMU_SLOT(
-		CRACEN_KMU_KEY_USAGE_SCHEME_RAW, CONFIG_BT_FAST_PAIR_KMU_SLOT),
+		CRACEN_KMU_KEY_USAGE_SCHEME_RAW,
+		CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY_KMU_SLOT),
 	.type = PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1),
 	.lifetime = PSA_KEY_LIFETIME_FROM_PERSISTENCE_AND_LOCATION(
 		CRACEN_KEY_PERSISTENCE_READ_ONLY, PSA_KEY_LOCATION_CRACEN_KMU),

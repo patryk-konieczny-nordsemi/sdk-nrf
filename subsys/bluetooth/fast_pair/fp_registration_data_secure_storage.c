@@ -33,10 +33,10 @@ LOG_MODULE_DECLARE(fast_pair, CONFIG_BT_FAST_PAIR_LOG_LEVEL);
 /* Handle of the Anti-Spoofing private key in the KMU (RAW usage scheme). */
 #define FP_KMU_KEY_ID \
 	PSA_KEY_ID_FROM_CRACEN_KMU_SLOT(	\
-		CRACEN_KMU_KEY_USAGE_SCHEME_RAW, CONFIG_BT_FAST_PAIR_KMU_SLOT)
+		CRACEN_KMU_KEY_USAGE_SCHEME_RAW, CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY_KMU_SLOT)
 
 /* Internal Trusted Storage uid holding the Model ID. */
-#define FP_ITS_MODEL_ID_UID	((psa_storage_uid_t)CONFIG_BT_FAST_PAIR_ITS_ID)
+#define FP_ITS_MODEL_ID_UID	((psa_storage_uid_t)CONFIG_BT_FAST_PAIR_MODEL_ID_ITS_ID)
 
 static bool is_enabled;
 
@@ -75,7 +75,7 @@ static bool prov_data_valid(void)
 	if (psa_export_public_key(FP_KMU_KEY_ID, pub_key, sizeof(pub_key),
 				&pub_key_len) != PSA_SUCCESS) {
 		LOG_ERR("Anti-Spoofing key in KMU slot %d is not usable",
-			CONFIG_BT_FAST_PAIR_KMU_SLOT);
+			CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY_KMU_SLOT);
 		return false;
 	}
 

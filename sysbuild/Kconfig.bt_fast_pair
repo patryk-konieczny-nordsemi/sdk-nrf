@@ -4,18 +4,70 @@
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 #
 
-menu "Bluetooth Fair Pair"
+menu "Bluetooth Fast Pair"
 
-# Mirrors BT_FAST_PAIR_PROVISION_PARTITION in subsys/bluetooth/fast_pair/Kconfig.fast_pair
-# (app image). Sysbuild uses this to gate hex generation; /ns (TF-M) targets use runtime
-# PSA provisioning (BT_FAST_PAIR_PROVISION_SECURE_STORAGE in the app).
-config BT_FAST_PAIR_PROVISION_PARTITION
-	bool "Provision Fast Pair data in the bt_fast_pair partition"
-	default y if !BOARD_IS_NON_SECURE
+choice BT_FAST_PAIR_PROVISION_SOURCE
+	prompt "Fast Pair provisioning pipeline"
+	default BT_FAST_PAIR_PROVISION_PARTITION
 	help
-	  When enabled, sysbuild may generate and merge the Fast Pair provisioning data
-	  hex (bt_fast_pair partition). Disabled on /ns (TF-M) builds that provision
-	  credentials into KMU and Internal Trusted Storage at runtime.
+	  Select how Fast Pair credentials (Model ID and Anti-Spoofing private key)
+	  are placed on the device during the build and provisioning flow.
+
+	  This is a sysbuild-level choice. It controls the build pipeline and which
+	  application Kconfig options are forwarded to the default image via
+	  sysbuild. It does not replace the corresponding choice in the application
+	  Fast Pair Kconfig tree.
+
+	config BT_FAST_PAIR_PROVISION_PARTITION
+		bool "Flash partition (build-time hex merge)"
+		help
+		  Generate a Fast Pair provisioning hex file at build time and merge it
+		  into the bt_fast_pair flash partition in the final image.
+
+		  Use this on targets that define a bt_fast_pair partition (Partition
+		  Manager or devicetree). Sysbuild generates the hex when Model ID and
+		  Anti-Spoofing key are set (see SB_CONFIG_BT_FAST_PAIR_PROV_DATA).
+
+		  Typical for single-image builds on nRF52/nRF53/nRF54 without TF-M /ns.
+		  Not used on /ns (TF-M) secure-storage flows.
+
+	config BT_FAST_PAIR_PROVISION_SECURE_STORAGE
+		bool "KMU and Internal Trusted Storage (runtime provisioner)"
+		help
+		  Store credentials in hardware-protected storage instead of a flash
+		  partition:
+		  	- Anti-Spoofing private key in a CRACEN KMU slot
+		  	(SB_CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY_KMU_SLOT)
+		  	- Model ID in PSA Internal Trusted Storage
+		  	(SB_CONFIG_BT_FAST_PAIR_MODEL_ID_ITS_ID)
+
+		  Requires a runtime provisioner image
+		  (SB_CONFIG_BT_FAST_PAIR_RUNTIME_PROVISIONER) to write credentials
+		  before the main application runs. The main application then reads
+		  from KMU/ITS at runtime.
+
+		  Intended for non-secure (TF-M) builds. Slot and ITS UID values must
+		  match on provisioner and application images; sysbuild forwards them
+		  to both via the Kconfig bridge.
+
+endchoice
+
+config BT_FAST_PAIR_RUNTIME_PROVISIONER
+	bool "Build runtime provisioner image"
+	default n
+	depends on BT_FAST_PAIR_PROVISION_SECURE_STORAGE
+	help
+	  Build a provisioner application image that writes Fast Pair credentials
+	  into KMU and Internal Trusted Storage at first boot (or when flashed).  
+	  Enable together with BT_FAST_PAIR_PROVISION_SECURE_STORAGE. Use a
+	  provisioner FILE_SUFFIX (for example mcuboot_provisioner or
+	  provisioner) so sysbuild builds the writer image before the main app.
+
+	  The provisioner registers SB_CONFIG_BT_FAST_PAIR_MODEL_ID and
+	  SB_CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY using the KMU slot and
+	  ITS UID configured in this menu. Flash the provisioner image first
+	  (preferably with --erase/--recover flag to clear old data), then the
+	  main Fast Pair application.
 
 config BT_FAST_PAIR_MODEL_ID
 	hex "Set the Model ID used for Fast Pair provisioning"
@@ -47,6 +99,28 @@ config BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY
 	  the project as an additional argument for the build command
 	  (``-DSB_CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY=<value>``).
 
+config BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY_KMU_SLOT
+	int "CRACEN KMU slot for the Anti-Spoofing private key"
+	default 30
+	help
+	  KMU slot index (RAW usage scheme) for the Anti-Spoofing Private Key
+	  when BT_FAST_PAIR_PROVISION_SECURE_STORAGE is selected. The runtime provisioner
+	  image imports the key from SB_CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY
+	  into this slot; the main Fast Pair application reads it from KMU at
+	  runtime instead of the bt_fast_pair flash partition. Must match on
+	  provisioner and application images (sysbuild forwards this value to both).
+
+config BT_FAST_PAIR_MODEL_ID_ITS_ID
+	int "PSA Internal Trusted Storage UID for the Model ID"
+	default 2000
+	help
+	  PSA ITS uid for the 24-bit Model ID when BT_FAST_PAIR_PROVISION_SECURE_STORAGE is
+	  selected. The runtime provisioner image writes SB_CONFIG_BT_FAST_PAIR_MODEL_ID
+	  here; the main Fast Pair application reads it from ITS at runtime instead
+	  of the bt_fast_pair flash partition. Must match on provisioner and
+	  application images (sysbuild forwards this value to both).
+
+
 config BT_FAST_PAIR_PROV_DATA
 	bool
 	depends on BT_FAST_PAIR_PROVISION_PARTITION
@@ -72,5 +146,4 @@ config BT_FAST_PAIR_PROV_DATA
 	  when the partition does not have to be manually defined by the user. Detailed
 	  documentation regarding the Fast Pair partition definition can be found in the Fast Pair
 	  integration guide.
-
 endmenu

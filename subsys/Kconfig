@@ -43,5 +43,4 @@ rsource "nrf_compress/Kconfig"
 rsource "mcuboot_ids/Kconfig"
 rsource "settings/Kconfig"
 rsource "provisioner/Kconfig"
-rsource "bluetooth/fast_pair/fp_provision/Kconfig.fp_provision"
 endmenu

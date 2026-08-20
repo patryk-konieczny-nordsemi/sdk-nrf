@@ -6,7 +6,7 @@
 
 menuconfig PROVISIONER
 	bool "Runtime provisioner"
-	depends on BUILD_WITH_TFM
+	default n
 	select PSA_CRYPTO
 	select BASE64
 	help

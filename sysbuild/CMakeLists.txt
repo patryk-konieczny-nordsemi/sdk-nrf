@@ -857,6 +857,10 @@ function(${SYSBUILD_CURRENT_MODULE_NAME}_pre_cmake)
     include(${ZEPHYR_NRF_MODULE_DIR}/cmake/sysbuild/fast_pair/hex.cmake)
   endif()
 
+  if(SB_CONFIG_BT_FAST_PAIR_PROVISION_SECURE_STORAGE OR SB_CONFIG_BT_FAST_PAIR_RUNTIME_PROVISIONER)
+    include(${ZEPHYR_NRF_MODULE_DIR}/cmake/sysbuild/fast_pair/kconfig_bridge.cmake)
+  endif()
+
   if(SB_CONFIG_WIFI_NRF70)
     set_config_bool(${DEFAULT_IMAGE} CONFIG_WIFI_NRF70 y)
 
