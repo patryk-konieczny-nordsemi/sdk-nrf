@@ -31,7 +31,7 @@ LOG_MODULE_DECLARE(fast_pair, CONFIG_BT_FAST_PAIR_LOG_LEVEL);
 #define FP_ECC_PUB_KEY_LEN	65U
 
 /* Handle of the Anti-Spoofing private key in the KMU (RAW usage scheme). */
-#define FP_KMU_KEY_ID \
+#define FP_KMU_KEY_ID 					\
 	PSA_KEY_ID_FROM_CRACEN_KMU_SLOT(	\
 		CRACEN_KMU_KEY_USAGE_SCHEME_RAW, CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY_KMU_SLOT)
 

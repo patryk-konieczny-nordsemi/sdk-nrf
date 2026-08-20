@@ -26,7 +26,10 @@ static const uint8_t fp_model_id_data[FP_REG_DATA_MODEL_ID_LEN] = {
 };
 
 /** Model ID provisioning payload */
-static const struct provisioner_data fp_model_id_provision =fp_register
+static const struct provisioner_data fp_model_id_provision = {
+	.data = fp_model_id_data,
+	.payload_length = sizeof(fp_model_id_data),
+	.format = PROVISIONER_DATA_FORMAT_RAW,
 };
 
 /** Model ID ITS settings */
@@ -34,6 +37,8 @@ static const struct provisioner_its_config fp_model_id_provision_conf = {
 	.uid = CONFIG_BT_FAST_PAIR_MODEL_ID_ITS_ID,
 	.create_flags = PSA_STORAGE_FLAG_WRITE_ONCE,
 };
+
+PROVISIONER_ENTRY_ITS_REGISTER(fp_model_id, fp_model_id_provision, fp_model_id_provision_conf);
 
 /** Base64-encoded Anti-Spoofing key embedded from Kconfig (purged from RRAM after import). */
 static const char fp_anti_spoofing_key_b64[] = CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY;
@@ -57,8 +62,6 @@ static const struct provisioner_kmu_config fp_anti_spoofing_key_provision_conf =
 	.usage_flags = PSA_KEY_USAGE_DERIVE,
 	.alg = PSA_ALG_ECDH,
 };
-
-PROVISIONER_ENTRY_ITS_REGISTER(fp_model_id, fp_model_id_provision, fp_model_id_provision_conf);
 
 PROVISIONER_ENTRY_KMU_REGISTER(
 	fp_anti_spoofing_key, fp_anti_spoofing_key_provision, fp_anti_spoofing_key_provision_conf);
