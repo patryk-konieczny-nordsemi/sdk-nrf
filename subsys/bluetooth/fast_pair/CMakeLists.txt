@@ -55,4 +55,5 @@ endif()
 
 add_subdirectory_ifdef(CONFIG_BT_FAST_PAIR_ADV_MANAGER adv_manager)
 
-add_subdirectory_ifdef(CONFIG_BT_FAST_PAIR_RUNTIME_PROVISIONER fp_provisioner)
+zephyr_library_sources_ifdef(CONFIG_BT_FAST_PAIR_RUNTIME_PROVISIONER
+  fp_provisioner/fp_provisioner_register_data.c)

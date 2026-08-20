@@ -26,10 +26,7 @@ static const uint8_t fp_model_id_data[FP_REG_DATA_MODEL_ID_LEN] = {
 };
 
 /** Model ID provisioning payload */
-static const struct provisioner_data fp_model_id_provision = {
-	.data = fp_model_id_data,
-	.payload_length = sizeof(fp_model_id_data),
-	.format = PROVISIONER_DATA_FORMAT_RAW,
+static const struct provisioner_data fp_model_id_provision =fp_register
 };
 
 /** Model ID ITS settings */
