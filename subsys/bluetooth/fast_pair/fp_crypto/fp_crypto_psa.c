@@ -260,9 +260,9 @@ int fp_crypto_ecdh_shared_secret(uint8_t *secret_key, const uint8_t *public_key,
 
 	if (IS_ENABLED(CONFIG_BT_FAST_PAIR_PROVISION_SECURE_STORAGE)) {
 		/* The Anti-Spoofing private key resides in the KMU. It is referenced by its
-		* key id and never imported in plaintext, so the raw private_key buffer is
-		* unused in this configuration (see fp_registration_data_provision.c).
-		*/
+		 * key id and never imported in plaintext, so the raw private_key buffer is
+		 * unused in this configuration.
+		 */
 		ARG_UNUSED(private_key);
 		priv_key_id = PSA_KEY_ID_FROM_CRACEN_KMU_SLOT(CRACEN_KMU_KEY_USAGE_SCHEME_RAW,
 				CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY_KMU_SLOT);
@@ -283,7 +283,7 @@ int fp_crypto_ecdh_shared_secret(uint8_t *secret_key, const uint8_t *public_key,
 	} else {
 		status = psa_destroy_key(priv_key_id);
 	}
-	
+
 	if (status != PSA_SUCCESS) {
 		LOG_ERR("%s failed (err: %d)",
 			IS_ENABLED(CONFIG_BT_FAST_PAIR_PROVISION_SECURE_STORAGE) ? "psa_purge_key" :

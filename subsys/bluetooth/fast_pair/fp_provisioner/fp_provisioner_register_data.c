@@ -40,10 +40,10 @@ static const struct provisioner_its_config fp_model_id_provision_conf = {
 
 PROVISIONER_ENTRY_ITS_REGISTER(fp_model_id, fp_model_id_provision, fp_model_id_provision_conf);
 
-/** Base64-encoded Anti-Spoofing key embedded from Kconfig (purged from RRAM after import). */
+/** Base64-encoded Anti-Spoofing key embedded from Kconfig. */
 static const char fp_anti_spoofing_key_b64[] = CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY;
 
-/** Anti-Spoofing Private Key provisioning payload - encoded in Base64*/
+/** Anti-Spoofing Private Key provisioning payload - encoded in Base64 */
 static const struct provisioner_data fp_anti_spoofing_key_provision = {
 	.data = fp_anti_spoofing_key_b64,
 	.payload_length = sizeof(fp_anti_spoofing_key_b64),

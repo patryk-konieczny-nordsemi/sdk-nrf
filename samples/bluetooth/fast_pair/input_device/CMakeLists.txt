@@ -11,13 +11,6 @@ project(input_device)
 if(CONFIG_PROVISIONER)
   add_subdirectory(provisioner)
 else()
-  target_sources(app PRIVATE
-    src/main.c
-    src/bt_adv_helper.c
-    src/hids_helper.c
-    src/bt_le_adv_prov_uuid16.c
-    src/battery_module.c
-  )
-
+  add_subdirectory(src)
   target_include_directories(app PRIVATE include)
 endif()

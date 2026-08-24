@@ -4,5 +4,5 @@
  * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
  */
 
-// Use the target device overlay
+/* Use the target device overlay */
 #include "nrf54l15dk_nrf54l15_cpuapp_ns.overlay"

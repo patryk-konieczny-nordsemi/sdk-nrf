@@ -5,6 +5,5 @@
 #
 zephyr_library_named(provisioner)
 zephyr_library_sources(src/provisioner.c)
-zephyr_library_include_directories(${ZEPHYR_NRF_MODULE_DIR}/include)
 
 zephyr_linker_sources(SECTIONS provisioner_entry.ld)

@@ -20,7 +20,7 @@ extern "C" {
  *
  * @brief Public API for the runtime data provisioner.
  * Provisioner application images include this header and call provisioner_run()
- * Provisioned data needs to be registered using registration macros 
+ * Provisioned data needs to be registered using registration macros
  */
 
 #include <stddef.h>
@@ -46,7 +46,8 @@ enum provisioner_data_format {
     PROVISIONER_DATA_FORMAT_BASE64,
 };
 
-struct provisioner_data{
+/** @brief Provision data description structure. */
+struct provisioner_data {
     /** Source data pointer */
     const void *data;
 
@@ -62,7 +63,8 @@ struct provisioner_data{
     enum provisioner_data_format format;
 };
 
-struct provisioner_its_config{
+/** @brief PSA ITS provision entry settings structure. */
+struct provisioner_its_config {
     /** PSA ITS uid. */
     psa_storage_uid_t uid;
 
@@ -70,7 +72,9 @@ struct provisioner_its_config{
     psa_storage_create_flags_t create_flags;
 };
 
-struct provisioner_kmu_config{
+/** @brief CRACEN KMU provision entry configuration structure. */
+
+struct provisioner_kmu_config {
     /** Key size in bits passed to psa_set_key_bits(). */
     size_t key_bits;
 
@@ -90,7 +94,7 @@ struct provisioner_kmu_config{
     psa_algorithm_t alg;
 };
 
-/** @brief PSA Internal Trusted Storage provision entry. */
+/** @brief PSA Internal Trusted Storage provision entry structure. */
 struct provisioner_its_entry {
     /** Entry name (STRINGIFY of the registration symbol). */
     const char *name;
@@ -102,7 +106,7 @@ struct provisioner_its_entry {
     struct provisioner_its_config config;
 };
 
-/** @brief CRACEN KMU provision entry. */
+/** @brief CRACEN KMU provision entry structure. */
 struct provisioner_kmu_entry {
     /** Entry name (STRINGIFY of the registration symbol). */
     const char *name;
@@ -145,7 +149,6 @@ struct provisioner_kmu_entry {
         .prov_data = (_provision_data),                                                     \
         .config = (_config),                                                                \
     }
-
 
 /**
  * Perform a run-time credential provisioning (KMU, ITS).

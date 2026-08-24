@@ -21,8 +21,7 @@ if(SB_CONFIG_MCUBOOT_SIGNATURE_USING_KMU)
           --- use the `west flash` command with either the `--erase` or `--recover`  ---
           --- option to ensure the bootloader provisioning operation is included in  ---
           --- the flashing procedure. The application will fail to boot if MCUboot   ---
-          --- is not properly provisioned. For detailed instructions, refer to the   ---
-          --- `Building and running` section in the Fast Pair Input Device Readme.   ---
+          --- is not properly provisioned.                                           ---
           ------------------------------------------------------------------------------
           ")
 endif()

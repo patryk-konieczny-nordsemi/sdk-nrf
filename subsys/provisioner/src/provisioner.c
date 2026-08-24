@@ -37,7 +37,7 @@ static int provision_init(void)
 static int provision_payload_get(struct provisioner_data *prov_data, uint8_t *buf,
 				 size_t buf_len, size_t *out_len)
 {
-	if(prov_data == NULL || prov_data->data == NULL || buf == NULL || out_len == NULL){
+	if (prov_data == NULL || prov_data->data == NULL || buf == NULL || out_len == NULL) {
 		return -EINVAL;
 	}
 
@@ -136,7 +136,14 @@ static int provision_kmu_entries_run(void)
 			return -EIO;
 		}
 
-		LOG_INF("Entry %s: provisioned to KMU id: %d", entry->name, (unsigned int)entry->config.id);
+		status = psa_purge_key(key_id);
+		if (status != PSA_SUCCESS) {
+			LOG_ERR("Entry %s: KMU psa_purge_key failed (err: %d)", entry->name, status);
+
+			err = -ECANCELED;
+		}
+
+		LOG_INF("Entry %s: provisioned to KMU id: %d", entry->name, entry->config.id);
 
 		mbedtls_platform_zeroize(payload, payload_len);
 	}

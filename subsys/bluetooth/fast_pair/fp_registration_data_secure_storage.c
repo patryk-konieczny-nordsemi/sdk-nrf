@@ -31,9 +31,10 @@ LOG_MODULE_DECLARE(fast_pair, CONFIG_BT_FAST_PAIR_LOG_LEVEL);
 #define FP_ECC_PUB_KEY_LEN	65U
 
 /* Handle of the Anti-Spoofing private key in the KMU (RAW usage scheme). */
-#define FP_KMU_KEY_ID 					\
-	PSA_KEY_ID_FROM_CRACEN_KMU_SLOT(	\
-		CRACEN_KMU_KEY_USAGE_SCHEME_RAW, CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY_KMU_SLOT)
+#define FP_KMU_KEY_ID 										\
+PSA_KEY_ID_FROM_CRACEN_KMU_SLOT(							\
+	CRACEN_KMU_KEY_USAGE_SCHEME_RAW, 						\
+	CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY_KMU_SLOT)
 
 /* Internal Trusted Storage uid holding the Model ID. */
 #define FP_ITS_MODEL_ID_UID	((psa_storage_uid_t)CONFIG_BT_FAST_PAIR_MODEL_ID_ITS_ID)
@@ -91,10 +92,10 @@ static bool prov_data_valid(void)
 
 int fp_reg_data_get_model_id(uint8_t *buf, size_t size)
 {
-	__ASSERT_NO_MSG(is_enabled);
-
 	psa_status_t status;
 	size_t read_len;
+
+	__ASSERT_NO_MSG(is_enabled);
 
 	if (size < FP_REG_DATA_MODEL_ID_LEN) {
 		return -EINVAL;
@@ -116,9 +117,15 @@ static int fp_reg_data_init(void)
 		return 0;
 	}
 
+	psa_status_t status = psa_crypto_init();
+	if (status != PSA_SUCCESS) {
+		LOG_ERR("psa_crypto_init failed (err: %d)", status);
+		return -EINVAL;
+	}
+
 	if (!prov_data_present() || !prov_data_valid()) {
-		LOG_ERR("Fast Pair data not provisioned - build and flash the provisioner "
-			"image (FILE_SUFFIX=provisioner) before running this application");
+		LOG_ERR("Fast Pair data not provisioned - flash the runtime provisioner image "
+			"before running this application");
 		return -EINVAL;
 	}
 

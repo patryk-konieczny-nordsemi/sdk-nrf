@@ -7,7 +7,14 @@
 # Bridge sysbuild Fast Pair Kconfig (SB_CONFIG_*) to app Kconfig (CONFIG_*)
 # on the default image. Only applies when secure-storage provisioning is used.
 
-set_config_bool(${DEFAULT_IMAGE} CONFIG_BT_FAST_PAIR_PROVISION_SECURE_STORAGE 
+if(NOT SB_CONFIG_BT_FAST_PAIR_CREDENTIALS_PRESENT AND SB_CONFIG_BT_FAST_PAIR_RUNTIME_PROVISIONER)
+  message(FATAL_ERROR
+    "SB_CONFIG_BT_FAST_PAIR_RUNTIME_PROVISIONER is enabled but Fast Pair "
+    "credentials are missing. Set SB_CONFIG_BT_FAST_PAIR_MODEL_ID (not "
+    "0x1000000) and SB_CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY.")
+endif()
+
+set_config_bool(${DEFAULT_IMAGE} CONFIG_BT_FAST_PAIR_PROVISION_SECURE_STORAGE
   SB_CONFIG_BT_FAST_PAIR_PROVISION_SECURE_STORAGE)
 
 # ----------------------------------------------------------------------------
@@ -20,7 +27,7 @@ if(SB_CONFIG_BT_FAST_PAIR_PROVISION_SECURE_STORAGE)
   set_config_int(${DEFAULT_IMAGE} CONFIG_BT_FAST_PAIR_MODEL_ID_ITS_ID
     ${SB_CONFIG_BT_FAST_PAIR_MODEL_ID_ITS_ID})
 
-  # Provisioner only configuration (ASK and Model_ID values)
+  # Provisioner only configuration (Anti-Spoofing Key and Model ID values)
   if(SB_CONFIG_BT_FAST_PAIR_RUNTIME_PROVISIONER)
     set_config_bool(${DEFAULT_IMAGE} CONFIG_BT_FAST_PAIR_RUNTIME_PROVISIONER y)
 
@@ -30,5 +37,3 @@ if(SB_CONFIG_BT_FAST_PAIR_PROVISION_SECURE_STORAGE)
       "${SB_CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY}")
   endif()
 endif()
-
-

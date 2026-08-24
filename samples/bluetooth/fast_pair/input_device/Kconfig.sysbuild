@@ -20,11 +20,9 @@ config BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY
 endmenu
 
 config BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY_KMU_SLOT
-	int "CRACEN KMU slot for the Anti-Spoofing private key"
 	default 30
 
 config BT_FAST_PAIR_MODEL_ID_ITS_ID
-	int "PSA Internal Trusted Storage UID for the Model ID"
 	default 2000
 
 config NRF_DEFAULT_IPC_RADIO
