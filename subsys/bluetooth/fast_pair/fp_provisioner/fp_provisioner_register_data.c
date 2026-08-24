@@ -26,11 +26,8 @@ static const uint8_t fp_model_id_data[FP_REG_DATA_MODEL_ID_LEN] = {
 };
 
 /** Model ID provisioning payload */
-static const struct provisioner_data fp_model_id_provision = {
-	.data = fp_model_id_data,
-	.payload_length = sizeof(fp_model_id_data),
-	.format = PROVISIONER_DATA_FORMAT_RAW,
-};
+PROVISIONER_DATA_DEFINE(fp_model_id_provision,fp_model_id_data,
+	PROVISIONER_DATA_FORMAT_RAW);
 
 /** Model ID ITS settings */
 static const struct provisioner_its_config fp_model_id_provision_conf = {
@@ -44,11 +41,8 @@ PROVISIONER_ENTRY_ITS_REGISTER(fp_model_id, fp_model_id_provision, fp_model_id_p
 static const char fp_anti_spoofing_key_b64[] = CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY;
 
 /** Anti-Spoofing Private Key provisioning payload - encoded in Base64 */
-static const struct provisioner_data fp_anti_spoofing_key_provision = {
-	.data = fp_anti_spoofing_key_b64,
-	.payload_length = sizeof(fp_anti_spoofing_key_b64),
-	.format = PROVISIONER_DATA_FORMAT_BASE64,
-};
+PROVISIONER_DATA_DEFINE(fp_anti_spoofing_key_provision,fp_anti_spoofing_key_b64,
+	PROVISIONER_DATA_FORMAT_BASE64);
 
 /** Anti-Spoofing Private Key KMU settings */
 static const struct provisioner_kmu_config fp_anti_spoofing_key_provision_conf = {

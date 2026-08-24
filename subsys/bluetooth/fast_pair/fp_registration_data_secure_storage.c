@@ -41,7 +41,7 @@ PSA_KEY_ID_FROM_CRACEN_KMU_SLOT(							\
 
 static bool is_enabled;
 
-/* Is the Anti-Spoofing private key present in the KMU slot? */
+/* Check if Anti-Spoofing private key present in the KMU slot */
 static bool prov_kmu_key_present(void)
 {
 	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
@@ -52,7 +52,7 @@ static bool prov_kmu_key_present(void)
 	return (status == PSA_SUCCESS);
 }
 
-/* Is the Model ID present in Internal Trusted Storage? */
+/* Check if the Model ID present in Internal Trusted Storage */
 static bool prov_model_id_present(void)
 {
 	struct psa_storage_info_t info;
@@ -60,14 +60,14 @@ static bool prov_model_id_present(void)
 	return (psa_its_get_info(FP_ITS_MODEL_ID_UID, &info) == PSA_SUCCESS);
 }
 
-/* Has the data been provisioned into both the KMU and Internal Trusted Storage? */
+/* Check if data been provisioned into both the KMU and Internal Trusted Storage */
 static bool prov_data_present(void)
 {
 	return prov_kmu_key_present() && prov_model_id_present();
 }
 
 /* Confirm the provisioned data is usable. */
-static bool prov_data_valid(void)
+static bool prov_data_validate(void)
 {
 	uint8_t pub_key[FP_ECC_PUB_KEY_LEN];
 	size_t pub_key_len;
@@ -123,7 +123,7 @@ static int fp_reg_data_init(void)
 		return -EINVAL;
 	}
 
-	if (!prov_data_present() || !prov_data_valid()) {
+	if (!prov_data_present() || !prov_data_validate()) {
 		LOG_ERR("Fast Pair data not provisioned - flash the runtime provisioner image "
 			"before running this application");
 		return -EINVAL;

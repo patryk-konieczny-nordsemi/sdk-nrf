@@ -118,6 +118,20 @@ struct provisioner_kmu_entry {
     struct provisioner_kmu_config config;
 };
 
+/**
+ * @brief Define a static provisioner data descriptor.
+ *
+ * @param _name           Symbol name for the @ref provisioner_data instance.
+ * @param _data_ptr       Source data pointer.
+ * @param _format         @ref provisioner_data_format value.
+ */
+ #define PROVISIONER_DATA_DEFINE(_name, _data_ptr, _format) \
+    static const struct provisioner_data _name = {          \
+        .data = (_data_ptr),                                \
+        .payload_length = sizeof(_data_ptr),                \
+        .format = (_format),                                \
+    }
+
 /** @brief Register a PSA ITS provisioning entry.
  *
  * Places a static entry in the provisioner iterable section. @ref provisioner_run()
@@ -127,11 +141,11 @@ struct provisioner_kmu_entry {
  * @param _provision_data Source payload (@ref provisioner_data).
  * @param _config ITS destination (@ref provisioner_its_config).
  */
-#define PROVISIONER_ENTRY_ITS_REGISTER(_name, _provision_data, _config)                     \
-    static const STRUCT_SECTION_ITERABLE(provisioner_its_entry, _name) = {                  \
-        .name = STRINGIFY(_name),                                                           \
-        .prov_data = (_provision_data),                                                     \
-        .config = (_config),                                                                \
+#define PROVISIONER_ENTRY_ITS_REGISTER(_name, _provision_data, _config)     \
+    static const STRUCT_SECTION_ITERABLE(provisioner_its_entry, _name) = {  \
+        .name = STRINGIFY(_name),                                           \
+        .prov_data = (_provision_data),                                     \
+        .config = (_config),                                                \
     }
 
 /** @brief Register a CRACEN KMU provisioning entry.
@@ -143,11 +157,11 @@ struct provisioner_kmu_entry {
  * @param _provision_data Source payload (@ref provisioner_data).
  * @param _config KMU key attributes (@ref provisioner_kmu_config).
  */
-#define PROVISIONER_ENTRY_KMU_REGISTER(_name, _provision_data, _config)                     \
-    static const STRUCT_SECTION_ITERABLE(provisioner_kmu_entry, _name) = {                  \
-        .name = STRINGIFY(_name),                                                           \
-        .prov_data = (_provision_data),                                                     \
-        .config = (_config),                                                                \
+#define PROVISIONER_ENTRY_KMU_REGISTER(_name, _provision_data, _config)     \
+    static const STRUCT_SECTION_ITERABLE(provisioner_kmu_entry, _name) = {  \
+        .name = STRINGIFY(_name),                                           \
+        .prov_data = (_provision_data),                                     \
+        .config = (_config),                                                \
     }
 
 /**
