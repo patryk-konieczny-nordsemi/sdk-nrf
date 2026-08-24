@@ -67,7 +67,6 @@ static struct fp_procedure fp_procedures[CONFIG_BT_MAX_CONN];
 
 static bool is_enabled;
 
-
 void bt_fast_pair_set_pairing_mode(bool pairing_mode)
 {
 	user_pairing_mode = pairing_mode;
@@ -213,14 +212,16 @@ int fp_keys_additional_data_decode(const struct bt_conn *conn, uint8_t *out_data
 static int key_gen_public_key(const struct bt_conn *conn,
 			      struct fp_keys_keygen_params *keygen_params)
 {
-	int err;
+	int err = 0;
 	struct fp_procedure *proc = &fp_procedures[bt_conn_index(conn)];
 
 	uint8_t req[FP_CRYPTO_AES128_BLOCK_LEN];
 	uint8_t priv_key[FP_REG_DATA_ANTI_SPOOFING_PRIV_KEY_LEN];
 	uint8_t ecdh_secret[FP_CRYPTO_ECDH_SHARED_KEY_LEN];
 
-	err = fp_get_anti_spoofing_priv_key(priv_key, sizeof(priv_key));
+	if (IS_ENABLED(CONFIG_BT_FAST_PAIR_PROVISION_PARTITION)) {
+		err = fp_get_anti_spoofing_priv_key(priv_key, sizeof(priv_key));
+	}
 
 	if (!err) {
 		err = fp_crypto_ecdh_shared_secret(ecdh_secret, keygen_params->public_key,

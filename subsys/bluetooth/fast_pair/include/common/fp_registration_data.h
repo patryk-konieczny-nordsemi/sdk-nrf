@@ -38,6 +38,10 @@ int fp_reg_data_get_model_id(uint8_t *buf, size_t size);
 
 /** Get Fast Pair anti-spoofing private key.
  *
+ * Only available when CONFIG_BT_FAST_PAIR_PROVISION_PARTITION is enabled.
+ * For CONFIG_BT_FAST_PAIR_PROVISION_SECURE_STORAGE, the key remains
+ * in KMU and is used internally by the PSA crypto backend; it is never exported in plaintext.
+ *
  * The module must be initialized with @ref bt_fast_pair_enable before using this function.
  *
  * @param[out] buf  Pointer to the buffer to be filled with the anti-spoofing private key.
