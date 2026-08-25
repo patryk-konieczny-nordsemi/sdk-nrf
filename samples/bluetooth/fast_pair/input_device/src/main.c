@@ -22,6 +22,11 @@ LOG_MODULE_REGISTER(fp_sample, LOG_LEVEL_INF);
 #include "hids_helper.h"
 #include "battery_module.h"
 
+#include "example_secure_partition_client.h"
+#include <psa/protected_storage.h>
+#include <psa/crypto.h>
+
+
 #define RUN_STATUS_LED						DK_LED1
 #define CON_STATUS_LED						DK_LED2
 #define FP_ADV_MODE_STATUS_LED					DK_LED3
@@ -530,9 +535,21 @@ int main(void)
 
 	LOG_INF("Sample has started");
 
+	uint64_t n;
 	for (;;) {
 		dk_set_led(RUN_STATUS_LED, run_led_on);
 		run_led_on = !run_led_on;
+
+		psa_status_t st = psa_example_secure_partition_get(&n);
+		if (st == PSA_SUCCESS) {
+			LOG_INF("Fibonacci: %llu", (unsigned long long)n);
+		}
+
+		// uint64_t leak;
+		// size_t len;
+		// st = psa_ps_get(0x2500ULL, 0, sizeof(leak), &leak, &len);
+		// LOG_INF("NS direct PS read: %d [leaked val: %llu] (expect DOES_NOT_EXIST or NOT_PERMITTED)", st, leak);
+
 		k_sleep(K_MSEC(RUN_LED_BLINK_INTERVAL_MS));
 	}
 }

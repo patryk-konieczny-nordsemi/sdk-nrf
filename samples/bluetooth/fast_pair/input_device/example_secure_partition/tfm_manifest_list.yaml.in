@@ -1,0 +1,22 @@
+{
+  "description": "TF-M secure peripheral partition manifests",
+  "type": "manifest_list",
+  "version_major": 0,
+  "version_minor": 1,
+  "manifest_list": [
+    {
+      "description": "Example Secure Partition",
+      "short_name": "TFM_ESP",
+      "manifest": "${TFM_BINARY_DIR}/../example_secure_partition/tfm_example_secure_partition.yaml",
+      "output_path": "${TFM_BINARY_DIR}/example_secure_partition",
+      "tfm_partition_ipc": true,
+      "version_major": 0,
+      "version_minor": 1,
+      "linker_pattern": {
+        "library_list": [
+          "*tfm_*partition_esp.*"
+          ],
+      }
+    }
+  ]
+}
