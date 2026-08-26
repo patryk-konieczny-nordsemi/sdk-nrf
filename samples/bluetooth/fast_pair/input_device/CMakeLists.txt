@@ -27,6 +27,7 @@ else()
     APPEND PROPERTY TFM_CMAKE_OPTIONS
     -DTFM_EXTRA_MANIFEST_LIST_FILES=${CMAKE_CURRENT_BINARY_DIR}/example_secure_partition/tfm_manifest_list.yaml
     -DTFM_EXTRA_PARTITION_PATHS=${CMAKE_CURRENT_LIST_DIR}/example_secure_partition
+    -DZEPHYR_NRFXLIB_MODULE_DIR=${ZEPHYR_NRFXLIB_MODULE_DIR}
   )
 
   target_include_directories(app PRIVATE
