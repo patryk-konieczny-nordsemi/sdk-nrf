@@ -8,11 +8,9 @@
 #include <limits.h>
 #include <string.h>
 
-#include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/base64.h>
-#include <zephyr/sys/util.h>
 #include <mbedtls/platform_util.h>
 
 #include <psa/crypto.h>
@@ -34,7 +32,7 @@ static int provision_init(void)
 	return 0;
 }
 
-static int provision_payload_get(struct provisioner_data *prov_data, uint8_t *buf,
+static int provision_payload_get(const struct provisioner_data *prov_data, uint8_t *buf,
 				 size_t buf_len, size_t *out_len)
 {
 	if (prov_data == NULL || prov_data->data == NULL || buf == NULL || out_len == NULL) {
@@ -83,16 +81,18 @@ static int provision_its_entries_run(void)
 		err = provision_payload_get(&(entry->prov_data), payload, sizeof(payload), &payload_len);
 		if (err != 0) {
 			LOG_ERR("Entry %s: invalid payload (err %d)", entry->name, err);
+			mbedtls_platform_zeroize(payload, payload_len);
 			return err;
 		}
 
 		status = psa_its_set(entry->config.uid, payload_len, payload, entry->config.create_flags);
 		if (status != PSA_SUCCESS) {
 			LOG_ERR("Entry %s: ITS write failed (err %d)", entry->name, status);
+			mbedtls_platform_zeroize(payload, payload_len);
 			return -EIO;
 		}
 
-		LOG_INF("Entry %s: provisioned to ITS uid: %u", entry->name, (unsigned int)entry->config.uid);
+		LOG_INF("Entry %s: provisioned to ITS uid: 0x%08x", entry->name, (unsigned int)entry->config.uid);
 
 		mbedtls_platform_zeroize(payload, payload_len);
 	}
@@ -113,12 +113,14 @@ static int provision_kmu_entries_run(void)
 		err = provision_payload_get(&(entry->prov_data), payload, sizeof(payload), &payload_len);
 		if (err != 0) {
 			LOG_ERR("Entry %s: invalid payload (err %d)", entry->name, err);
+			mbedtls_platform_zeroize(payload, payload_len);
 			return err;
 		}
 
 		if (payload_len != (entry->config.key_bits / CHAR_BIT)) {
 			LOG_ERR("Entry %s: decoded length %zu does not match key size %zu bits",
 				entry->name, payload_len, entry->config.key_bits);
+			mbedtls_platform_zeroize(payload, payload_len);
 			return -EINVAL;
 		}
 
@@ -133,17 +135,18 @@ static int provision_kmu_entries_run(void)
 		psa_reset_key_attributes(&attr);
 		if (status != PSA_SUCCESS) {
 			LOG_ERR("Entry %s: KMU import failed (err %d)", entry->name, status);
+			mbedtls_platform_zeroize(payload, payload_len);
 			return -EIO;
 		}
 
 		status = psa_purge_key(key_id);
 		if (status != PSA_SUCCESS) {
 			LOG_ERR("Entry %s: KMU psa_purge_key failed (err: %d)", entry->name, status);
-
-			err = -ECANCELED;
+			mbedtls_platform_zeroize(payload, payload_len);
+			return -ECANCELED;
 		}
 
-		LOG_INF("Entry %s: provisioned to KMU id: %d", entry->name, entry->config.id);
+		LOG_INF("Entry %s: provisioned to KMU id: %u", entry->name, entry->config.id);
 
 		mbedtls_platform_zeroize(payload, payload_len);
 	}

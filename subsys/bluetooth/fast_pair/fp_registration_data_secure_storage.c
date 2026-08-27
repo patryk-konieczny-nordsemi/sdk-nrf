@@ -31,17 +31,17 @@ LOG_MODULE_DECLARE(fast_pair, CONFIG_BT_FAST_PAIR_LOG_LEVEL);
 #define FP_ECC_PUB_KEY_LEN	65U
 
 /* Handle of the Anti-Spoofing private key in the KMU (RAW usage scheme). */
-#define FP_KMU_KEY_ID 										\
-PSA_KEY_ID_FROM_CRACEN_KMU_SLOT(							\
-	CRACEN_KMU_KEY_USAGE_SCHEME_RAW, 						\
-	CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY_KMU_SLOT)
+#define FP_KMU_KEY_ID 											\
+	PSA_KEY_ID_FROM_CRACEN_KMU_SLOT(							\
+		CRACEN_KMU_KEY_USAGE_SCHEME_RAW, 						\
+		CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY_KMU_SLOT)
 
 /* Internal Trusted Storage uid holding the Model ID. */
 #define FP_ITS_MODEL_ID_UID	((psa_storage_uid_t)CONFIG_BT_FAST_PAIR_MODEL_ID_ITS_ID)
 
 static bool is_enabled;
 
-/* Check if Anti-Spoofing private key present in the KMU slot */
+/* Check if Anti-Spoofing private key is present in the KMU slot */
 static bool prov_kmu_key_present(void)
 {
 	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
@@ -52,7 +52,7 @@ static bool prov_kmu_key_present(void)
 	return (status == PSA_SUCCESS);
 }
 
-/* Check if the Model ID present in Internal Trusted Storage */
+/* Check if the Model ID is present in Internal Trusted Storage */
 static bool prov_model_id_present(void)
 {
 	struct psa_storage_info_t info;

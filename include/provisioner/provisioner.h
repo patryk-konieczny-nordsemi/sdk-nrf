@@ -18,9 +18,9 @@ extern "C" {
  *
  * @{
  *
- * @brief Public API for the runtime data provisioner.
- * Provisioner application images include this header and call provisioner_run()
- * Provisioned data needs to be registered using registration macros
+ * @brief Public API for runtime data provisioning.
+ * Register entries with the PROVISIONER_* macros and call @ref provisioner_run()
+ * to write data to PSA ITS or CRACEN KMU.
  */
 
 #include <stddef.h>
@@ -41,7 +41,7 @@ enum provisioner_data_format {
 
     /**
     * @brief Base64-encoded, NUL-terminated text at the start of @a data.
-    * @a payload_length bounds the decode (strnlen). 
+    * @a payload_length bounds the decode (strnlen).
     */
     PROVISIONER_DATA_FORMAT_BASE64,
 };
@@ -53,9 +53,7 @@ struct provisioner_data {
 
     /**
     * Payload extent of @a data.
-    *
-    * RAW: exact byte count
-    * BASE64: upper bound for strnlen (string + NUL).
+    * Depends on the data encoding (@ref provisioner_data_format)
     */
     size_t payload_length;
 
@@ -73,7 +71,6 @@ struct provisioner_its_config {
 };
 
 /** @brief CRACEN KMU provision entry configuration structure. */
-
 struct provisioner_kmu_config {
     /** Key size in bits passed to psa_set_key_bits(). */
     size_t key_bits;
@@ -125,7 +122,7 @@ struct provisioner_kmu_entry {
  * @param _data_ptr       Source data pointer.
  * @param _format         @ref provisioner_data_format value.
  */
- #define PROVISIONER_DATA_DEFINE(_name, _data_ptr, _format) \
+#define PROVISIONER_DATA_DEFINE(_name, _data_ptr, _format)  \
     static const struct provisioner_data _name = {          \
         .data = (_data_ptr),                                \
         .payload_length = sizeof(_data_ptr),                \

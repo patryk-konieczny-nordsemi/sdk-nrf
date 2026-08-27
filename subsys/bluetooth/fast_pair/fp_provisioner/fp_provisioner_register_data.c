@@ -5,14 +5,11 @@
  */
 
 #include <limits.h>
-#include <stdint.h>
 
 #include <cracen_psa_kmu.h>
 #include <cracen_psa_key_ids.h>
 #include <psa/crypto.h>
 #include <psa/internal_trusted_storage.h>
-
-#include <zephyr/sys/util.h>
 
 #include <provisioner/provisioner.h>
 
@@ -26,8 +23,9 @@ static const uint8_t fp_model_id_data[FP_REG_DATA_MODEL_ID_LEN] = {
 };
 
 /** Model ID provisioning payload */
-PROVISIONER_DATA_DEFINE(fp_model_id_provision,fp_model_id_data,
-	PROVISIONER_DATA_FORMAT_RAW);
+PROVISIONER_DATA_DEFINE(fp_model_id_provision,
+			fp_model_id_data,
+			PROVISIONER_DATA_FORMAT_RAW);
 
 /** Model ID ITS settings */
 static const struct provisioner_its_config fp_model_id_provision_conf = {
@@ -35,14 +33,17 @@ static const struct provisioner_its_config fp_model_id_provision_conf = {
 	.create_flags = PSA_STORAGE_FLAG_WRITE_ONCE,
 };
 
-PROVISIONER_ENTRY_ITS_REGISTER(fp_model_id, fp_model_id_provision, fp_model_id_provision_conf);
+PROVISIONER_ENTRY_ITS_REGISTER(fp_model_id,
+			fp_model_id_provision,
+			fp_model_id_provision_conf);
 
 /** Base64-encoded Anti-Spoofing key embedded from Kconfig. */
 static const char fp_anti_spoofing_key_b64[] = CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY;
 
 /** Anti-Spoofing Private Key provisioning payload - encoded in Base64 */
-PROVISIONER_DATA_DEFINE(fp_anti_spoofing_key_provision,fp_anti_spoofing_key_b64,
-	PROVISIONER_DATA_FORMAT_BASE64);
+PROVISIONER_DATA_DEFINE(fp_anti_spoofing_key_provision,
+			fp_anti_spoofing_key_b64,
+			PROVISIONER_DATA_FORMAT_BASE64);
 
 /** Anti-Spoofing Private Key KMU settings */
 static const struct provisioner_kmu_config fp_anti_spoofing_key_provision_conf = {
@@ -57,5 +58,6 @@ static const struct provisioner_kmu_config fp_anti_spoofing_key_provision_conf =
 	.alg = PSA_ALG_ECDH,
 };
 
-PROVISIONER_ENTRY_KMU_REGISTER(
-	fp_anti_spoofing_key, fp_anti_spoofing_key_provision, fp_anti_spoofing_key_provision_conf);
+PROVISIONER_ENTRY_KMU_REGISTER(fp_anti_spoofing_key,
+			fp_anti_spoofing_key_provision,
+			fp_anti_spoofing_key_provision_conf);

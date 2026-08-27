@@ -9,8 +9,7 @@
  *
  * Slot sizes are derived from the standard TF-M /ns build footprint with
  * headroom for DFU growth and debug builds, aligned to the 4 KB TrustZone
- * flash region granularity:
- *
+ * flash region granularity.
  */
 
 / {

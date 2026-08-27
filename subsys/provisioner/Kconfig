@@ -18,8 +18,8 @@ config PROVISIONER_MAX_DATA_SIZE
 	int "Provisioner entry max data size"
 	default 1024
 	help
-	  Sets the buffer size used for provisioning
-	  Limits the maximum size of a single data entry
+	  Sets the buffer size used for provisioning.
+	  Limits the maximum size of a single data entry.
 
 module = PROVISIONER
 module-str = Provisioner subsystem

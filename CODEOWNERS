@@ -384,6 +384,7 @@
 /include/tfm/                             @nrfconnect/ncs-aegir
 /include/dult.h                           @nrfconnect/ncs-si-bluebagel
 /include/accel_to_angle/                  @nrfconnect/ncs-si-bluebagel
+/include/provisioner/                     @nrfconnect/ncs-si-bluebagel
 
 # Libraries
 /lib/accel_to_angle/                      @nrfconnect/ncs-si-bluebagel
@@ -908,6 +909,7 @@
 /subsys/shell/                            @nordic-krch
 /subsys/trusted_storage/                  @nrfconnect/ncs-aegir
 /subsys/uart_async_adapter/               @nrfconnect/ncs-si-muffin
+/subsys/provisioner/                      @nrfconnect/ncs-si-bluebagel
 
 # Sysbuild
 /sysbuild/                                @nrfconnect/ncs-co-build-system

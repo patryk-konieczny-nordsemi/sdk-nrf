@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2026 Nordic Semiconductor
+# Copyright (c) 2026 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 #
@@ -19,7 +19,7 @@ set_config_bool(${DEFAULT_IMAGE} CONFIG_BT_FAST_PAIR_PROVISION_SECURE_STORAGE
 
 # ----------------------------------------------------------------------------
 # Secure Storage Configuration
-# KMU/ITS slot values: Kconfig.sysbuild (SB_CONFIG_BT_FAST_PAIR_*).
+# KMU/ITS slot values: sysbuild/Kconfig.bt_fast_pair (SB_CONFIG_BT_FAST_PAIR_*).
 # ----------------------------------------------------------------------------
 if(SB_CONFIG_BT_FAST_PAIR_PROVISION_SECURE_STORAGE)
   set_config_int(${DEFAULT_IMAGE} CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY_KMU_SLOT
