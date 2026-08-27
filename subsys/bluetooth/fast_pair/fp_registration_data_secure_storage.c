@@ -28,16 +28,15 @@ LOG_MODULE_DECLARE(fast_pair, CONFIG_BT_FAST_PAIR_LOG_LEVEL);
  * (0x04 || X || Y). Only used to size the scratch buffer for the key usability
  * check.
  */
-#define FP_ECC_PUB_KEY_LEN	65U
+#define FP_ECC_PUB_KEY_LEN 65U
 
 /* Handle of the Anti-Spoofing private key in the KMU (RAW usage scheme). */
-#define FP_KMU_KEY_ID 											\
-	PSA_KEY_ID_FROM_CRACEN_KMU_SLOT(							\
-		CRACEN_KMU_KEY_USAGE_SCHEME_RAW, 						\
-		CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY_KMU_SLOT)
+#define FP_KMU_KEY_ID										\
+	PSA_KEY_ID_FROM_CRACEN_KMU_SLOT(CRACEN_KMU_KEY_USAGE_SCHEME_RAW,		        \
+					CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY_KMU_SLOT)
 
 /* Internal Trusted Storage uid holding the Model ID. */
-#define FP_ITS_MODEL_ID_UID	((psa_storage_uid_t)CONFIG_BT_FAST_PAIR_MODEL_ID_ITS_ID)
+#define FP_ITS_MODEL_ID_UID ((psa_storage_uid_t)CONFIG_BT_FAST_PAIR_MODEL_ID_ITS_ID)
 
 static bool is_enabled;
 
@@ -73,15 +72,15 @@ static bool prov_data_validate(void)
 	size_t pub_key_len;
 	struct psa_storage_info_t info;
 
-	if (psa_export_public_key(FP_KMU_KEY_ID, pub_key, sizeof(pub_key),
-				&pub_key_len) != PSA_SUCCESS) {
+	if (psa_export_public_key(FP_KMU_KEY_ID, pub_key, sizeof(pub_key), &pub_key_len) !=
+	    PSA_SUCCESS) {
 		LOG_ERR("Anti-Spoofing key in KMU slot %d is not usable",
 			CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY_KMU_SLOT);
 		return false;
 	}
 
 	if ((psa_its_get_info(FP_ITS_MODEL_ID_UID, &info) != PSA_SUCCESS) ||
-		(info.size != FP_REG_DATA_MODEL_ID_LEN)) {
+	    (info.size != FP_REG_DATA_MODEL_ID_LEN)) {
 		LOG_ERR("Model ID in Internal Trusted Storage (uid %u) is missing or malformed",
 			(unsigned int)FP_ITS_MODEL_ID_UID);
 		return false;
@@ -118,6 +117,7 @@ static int fp_reg_data_init(void)
 	}
 
 	psa_status_t status = psa_crypto_init();
+
 	if (status != PSA_SUCCESS) {
 		LOG_ERR("psa_crypto_init failed (err: %d)", status);
 		return -EINVAL;
@@ -142,4 +142,4 @@ static int fp_reg_data_uninit(void)
 }
 
 FP_ACTIVATION_MODULE_REGISTER(fp_reg_data, CONFIG_BT_FAST_PAIR_REGISTRATION_DATA_INIT_PRIORITY,
-				fp_reg_data_init, fp_reg_data_uninit);
+			      fp_reg_data_init, fp_reg_data_uninit);

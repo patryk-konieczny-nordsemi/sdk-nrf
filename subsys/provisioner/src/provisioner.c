@@ -78,21 +78,24 @@ static int provision_its_entries_run(void)
 		psa_status_t status;
 		int err;
 
-		err = provision_payload_get(&(entry->prov_data), payload, sizeof(payload), &payload_len);
+		err = provision_payload_get(&entry->prov_data, payload, sizeof(payload),
+					    &payload_len);
 		if (err != 0) {
 			LOG_ERR("Entry %s: invalid payload (err %d)", entry->name, err);
 			mbedtls_platform_zeroize(payload, payload_len);
 			return err;
 		}
 
-		status = psa_its_set(entry->config.uid, payload_len, payload, entry->config.create_flags);
+		status = psa_its_set(entry->config.uid, payload_len, payload,
+				     entry->config.create_flags);
 		if (status != PSA_SUCCESS) {
 			LOG_ERR("Entry %s: ITS write failed (err %d)", entry->name, status);
 			mbedtls_platform_zeroize(payload, payload_len);
 			return -EIO;
 		}
 
-		LOG_INF("Entry %s: provisioned to ITS uid: 0x%08x", entry->name, (unsigned int)entry->config.uid);
+		LOG_INF("Entry %s: provisioned to ITS uid: 0x%08x", entry->name,
+			(unsigned int)entry->config.uid);
 
 		mbedtls_platform_zeroize(payload, payload_len);
 	}
@@ -110,7 +113,8 @@ static int provision_kmu_entries_run(void)
 		psa_status_t status;
 		int err;
 
-		err = provision_payload_get(&(entry->prov_data), payload, sizeof(payload), &payload_len);
+		err = provision_payload_get(&entry->prov_data, payload, sizeof(payload),
+					    &payload_len);
 		if (err != 0) {
 			LOG_ERR("Entry %s: invalid payload (err %d)", entry->name, err);
 			mbedtls_platform_zeroize(payload, payload_len);
@@ -141,7 +145,8 @@ static int provision_kmu_entries_run(void)
 
 		status = psa_purge_key(key_id);
 		if (status != PSA_SUCCESS) {
-			LOG_ERR("Entry %s: KMU psa_purge_key failed (err: %d)", entry->name, status);
+			LOG_ERR("Entry %s: KMU psa_purge_key failed (err: %d)", entry->name,
+				status);
 			mbedtls_platform_zeroize(payload, payload_len);
 			return -ECANCELED;
 		}

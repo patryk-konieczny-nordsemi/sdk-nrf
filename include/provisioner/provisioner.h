@@ -36,83 +36,83 @@ extern "C" {
 
 /** @brief Source data encoding for a provision entry. */
 enum provisioner_data_format {
-    /** @brief Binary payload; @a payload_length is the exact byte count to read. */
-    PROVISIONER_DATA_FORMAT_RAW,
+	/** @brief Binary payload; @a payload_length is the exact byte count to read. */
+	PROVISIONER_DATA_FORMAT_RAW,
 
-    /**
-    * @brief Base64-encoded, NUL-terminated text at the start of @a data.
-    * @a payload_length bounds the decode (strnlen).
-    */
-    PROVISIONER_DATA_FORMAT_BASE64,
+	/**
+	 * @brief Base64-encoded, NUL-terminated text at the start of @a data.
+	 * @a payload_length bounds the decode (strnlen).
+	 */
+	PROVISIONER_DATA_FORMAT_BASE64,
 };
 
 /** @brief Provision data description structure. */
 struct provisioner_data {
-    /** Source data pointer */
-    const void *data;
+	/** Source data pointer */
+	const void *data;
 
-    /**
-    * Payload extent of @a data.
-    * Depends on the data encoding (@ref provisioner_data_format)
-    */
-    size_t payload_length;
+	/**
+	 * Payload extent of @a data.
+	 * Depends on the data encoding (@ref provisioner_data_format)
+	 */
+	size_t payload_length;
 
-    /** Encoding of @a data. */
-    enum provisioner_data_format format;
+	/** Encoding of @a data. */
+	enum provisioner_data_format format;
 };
 
 /** @brief PSA ITS provision entry settings structure. */
 struct provisioner_its_config {
-    /** PSA ITS uid. */
-    psa_storage_uid_t uid;
+	/** PSA ITS uid. */
+	psa_storage_uid_t uid;
 
-    /** Flags passed to psa_its_set(). */
-    psa_storage_create_flags_t create_flags;
+	/** Flags passed to psa_its_set(). */
+	psa_storage_create_flags_t create_flags;
 };
 
 /** @brief CRACEN KMU provision entry configuration structure. */
 struct provisioner_kmu_config {
-    /** Key size in bits passed to psa_set_key_bits(). */
-    size_t key_bits;
+	/** Key size in bits passed to psa_set_key_bits(). */
+	size_t key_bits;
 
-    /** PSA key identifier (KMU slot mapping). */
-    psa_key_id_t id;
+	/** PSA key identifier (KMU slot mapping). */
+	psa_key_id_t id;
 
-    /** PSA key type. */
-    psa_key_type_t type;
+	/** PSA key type. */
+	psa_key_type_t type;
 
-    /** PSA key lifetime. */
-    psa_key_lifetime_t lifetime;
+	/** PSA key lifetime. */
+	psa_key_lifetime_t lifetime;
 
-    /** PSA key usage flags. */
-    psa_key_usage_t usage_flags;
+	/** PSA key usage flags. */
+	psa_key_usage_t usage_flags;
 
-    /** PSA key algorithm. */
-    psa_algorithm_t alg;
+	/** PSA key algorithm. */
+	psa_algorithm_t alg;
 };
 
 /** @brief PSA Internal Trusted Storage provision entry structure. */
 struct provisioner_its_entry {
-    /** Entry name (STRINGIFY of the registration symbol). */
-    const char *name;
+	/** Entry name (STRINGIFY of the registration symbol). */
+	const char *name;
 
-    /** Provisioner data */
-    struct provisioner_data prov_data;
+	/** Provisioner data */
+	struct provisioner_data prov_data;
 
-    /** ITS entry config */
-    struct provisioner_its_config config;
+	/** ITS entry config */
+	struct provisioner_its_config config;
 };
 
 /** @brief CRACEN KMU provision entry structure. */
 struct provisioner_kmu_entry {
-    /** Entry name (STRINGIFY of the registration symbol). */
-    const char *name;
+	/** Entry name (STRINGIFY of the registration symbol). */
+	const char *name;
 
-    /** Provisioner data */
-    struct provisioner_data prov_data;
+	/** Provisioner data */
+	struct provisioner_data prov_data;
 
-    /** KMU entry config */
-    struct provisioner_kmu_config config;
+	/** KMU entry config */
+	struct provisioner_kmu_config config;
 };
 
 /**
@@ -122,12 +122,12 @@ struct provisioner_kmu_entry {
  * @param _data_ptr       Source data pointer.
  * @param _format         @ref provisioner_data_format value.
  */
-#define PROVISIONER_DATA_DEFINE(_name, _data_ptr, _format)  \
-    static const struct provisioner_data _name = {          \
-        .data = (_data_ptr),                                \
-        .payload_length = sizeof(_data_ptr),                \
-        .format = (_format),                                \
-    }
+#define PROVISIONER_DATA_DEFINE(_name, _data_ptr, _format)			\
+	static const struct provisioner_data _name = {				\
+		.data = (_data_ptr),						\
+		.payload_length = sizeof(_data_ptr),				\
+		.format = (_format),						\
+	}
 
 /** @brief Register a PSA ITS provisioning entry.
  *
@@ -138,12 +138,12 @@ struct provisioner_kmu_entry {
  * @param _provision_data Source payload (@ref provisioner_data).
  * @param _config ITS destination (@ref provisioner_its_config).
  */
-#define PROVISIONER_ENTRY_ITS_REGISTER(_name, _provision_data, _config)     \
-    static const STRUCT_SECTION_ITERABLE(provisioner_its_entry, _name) = {  \
-        .name = STRINGIFY(_name),                                           \
-        .prov_data = (_provision_data),                                     \
-        .config = (_config),                                                \
-    }
+#define PROVISIONER_ENTRY_ITS_REGISTER(_name, _provision_data, _config)		\
+	static const STRUCT_SECTION_ITERABLE(provisioner_its_entry, _name) = {	\
+		.name = STRINGIFY(_name),					\
+		.prov_data = (_provision_data),					\
+		.config = (_config),						\
+	}
 
 /** @brief Register a CRACEN KMU provisioning entry.
  *
@@ -154,12 +154,12 @@ struct provisioner_kmu_entry {
  * @param _provision_data Source payload (@ref provisioner_data).
  * @param _config KMU key attributes (@ref provisioner_kmu_config).
  */
-#define PROVISIONER_ENTRY_KMU_REGISTER(_name, _provision_data, _config)     \
-    static const STRUCT_SECTION_ITERABLE(provisioner_kmu_entry, _name) = {  \
-        .name = STRINGIFY(_name),                                           \
-        .prov_data = (_provision_data),                                     \
-        .config = (_config),                                                \
-    }
+#define PROVISIONER_ENTRY_KMU_REGISTER(_name, _provision_data, _config)		\
+	static const STRUCT_SECTION_ITERABLE(provisioner_kmu_entry, _name) = {	\
+		.name = STRINGIFY(_name),					\
+		.prov_data = (_provision_data),					\
+		.config = (_config),						\
+	}
 
 /**
  * Perform a run-time credential provisioning (KMU, ITS).
