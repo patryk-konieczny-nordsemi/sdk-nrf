@@ -11,32 +11,36 @@ set(APPLICATION_CONFIG_DIR "${CMAKE_CURRENT_LIST_DIR}/configuration")
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(locator_tag)
 
-# NORDIC SDK APP START
-target_sources(app PRIVATE
-  src/main.c
-  src/factory_reset.c
-)
+if(CONFIG_PROVISIONER)
+  add_subdirectory(provisioner)
+else()
+  # NORDIC SDK APP START
+  target_sources(app PRIVATE
+    src/main.c
+    src/factory_reset.c
+  )
 
-zephyr_linker_sources(SECTIONS src/factory_reset_callbacks.ld)
+  zephyr_linker_sources(SECTIONS src/factory_reset_callbacks.ld)
 
-if(CONFIG_APP_DFU)
-  target_sources(app PRIVATE src/dfu.c)
+  if(CONFIG_APP_DFU)
+    target_sources(app PRIVATE src/dfu.c)
+  endif()
+
+  if(CONFIG_APP_RANGING)
+    target_sources(app PRIVATE src/ranging.c)
+  endif()
+
+  if(NOT CONFIG_BT_FAST_PAIR_FHN_RING_COMP_NONE)
+    target_sources(app PRIVATE src/ring.c)
+  endif()
+
+  target_include_directories(app PRIVATE include)
+
+  add_subdirectory(src/ui)
+  add_subdirectory(src/battery)
+
+  if(CONFIG_BT_FAST_PAIR_FHN_DULT_MOTION_DETECTOR)
+    add_subdirectory(src/motion_detector)
+  endif()
+  # NORDIC SDK APP END
 endif()
-
-if(CONFIG_APP_RANGING)
-  target_sources(app PRIVATE src/ranging.c)
-endif()
-
-if(NOT CONFIG_BT_FAST_PAIR_FHN_RING_COMP_NONE)
-  target_sources(app PRIVATE src/ring.c)
-endif()
-
-target_include_directories(app PRIVATE include)
-
-add_subdirectory(src/ui)
-add_subdirectory(src/battery)
-
-if(CONFIG_BT_FAST_PAIR_FHN_DULT_MOTION_DETECTOR)
-  add_subdirectory(src/motion_detector)
-endif()
-# NORDIC SDK APP END
