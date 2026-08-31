@@ -13,6 +13,7 @@ LOG_MODULE_DECLARE(fp_crypto, CONFIG_FP_CRYPTO_LOG_LEVEL);
 
 #include "fp_crypto.h"
 #include "fp_registration_data.h"
+#include "fp_crypto_spe_client.h"
 
 int fp_crypto_sha256(uint8_t *out, const uint8_t *in, size_t data_len)
 {
@@ -293,6 +294,62 @@ int fp_crypto_ecdh_shared_secret(uint8_t *secret_key, const uint8_t *public_key,
 	}
 
 	return err;
+}
+
+int fp_crypto_aes256_ecb_encrypt(uint8_t *out, const uint8_t *in, const uint8_t *k)
+{	
+	if (IS_ENABLED(CONFIG_BUILD_WITH_TFM)) {
+		psa_status_t status = fp_crypto_spe_aes256_ecb_encrypt(out, in, k);
+		if (status != PSA_SUCCESS) {
+			return -EIO;
+		}
+
+		return 0;
+	}
+
+	return -ENOTSUP;
+}
+
+int fp_crypto_aes256_ecb_decrypt(uint8_t *out, const uint8_t *in, const uint8_t *k)
+{
+	if (IS_ENABLED(CONFIG_BUILD_WITH_TFM)) {
+		psa_status_t status = fp_crypto_spe_aes256_ecb_decrypt(out, in, k);
+		if (status != PSA_SUCCESS) {
+			return -EIO;
+		}
+
+		return 0;
+	}
+
+	return -ENOTSUP;
+}
+
+int fp_crypto_ecc_secp160r1_calculate(uint8_t *out, uint8_t *mod, const uint8_t *in, size_t datalen)
+{
+	if (IS_ENABLED(CONFIG_BUILD_WITH_TFM)) {
+		psa_status_t status = fp_crypto_spe_ecc_secp160r1_calculate(out, mod, in, datalen);
+		if (status != PSA_SUCCESS) {
+			return -EIO;
+		}
+
+		return 0;
+	}
+
+	return -ENOTSUP;
+}
+
+int fp_crypto_ecc_secp256r1_calculate(uint8_t *out, uint8_t *mod, const uint8_t *in, size_t datalen)
+{
+	if (IS_ENABLED(CONFIG_BUILD_WITH_TFM)) {
+		psa_status_t status = fp_crypto_spe_ecc_secp256r1_calculate(out, mod, in, datalen);
+		if (status != PSA_SUCCESS) {
+			return -EIO;
+		}
+
+		return 0;
+	}
+
+	return -ENOTSUP;
 }
 
 static int fp_crypto_psa_init(void)

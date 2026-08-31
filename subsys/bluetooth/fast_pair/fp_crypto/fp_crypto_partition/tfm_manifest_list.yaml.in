@@ -1,0 +1,28 @@
+#
+# Copyright (c) 2026 Nordic Semiconductor
+#
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+#
+
+{
+  "description": "TF-M secure peripheral partition manifests",
+  "type": "manifest_list",
+  "version_major": 0,
+  "version_minor": 1,
+  "manifest_list": [
+    {
+      "description": "Fast Pair Crypto Partition",
+      "short_name": "TFM_FPC",
+      "manifest": "${FP_CRYPTO_PARTITION_YAML}",
+      "output_path": "${FP_CRYPTO_PARTITION_TFM_OUT}",
+      "tfm_partition_ipc": false,
+      "version_major": 0,
+      "version_minor": 1,
+      "linker_pattern": {
+        "library_list": [
+          "*tfm_*partition_fpc.*"
+          ],
+      }
+    }
+  ]
+}
