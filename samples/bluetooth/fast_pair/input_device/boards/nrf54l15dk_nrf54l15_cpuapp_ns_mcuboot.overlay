@@ -5,7 +5,7 @@
  */
 
 /*
- * Flash layout for the MCUboot-enabled /ns (TF-M) build (FILE_SUFFIX=mcuboot).
+ * Flash layout for the MCUboot-enabled /ns (TF-M) build.
  *
  * Slot sizes are derived from the standard TF-M /ns build footprint with
  * headroom for DFU growth and debug builds, aligned to the 4 KB TrustZone

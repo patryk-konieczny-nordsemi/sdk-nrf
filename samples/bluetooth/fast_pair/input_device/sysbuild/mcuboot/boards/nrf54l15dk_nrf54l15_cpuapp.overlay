@@ -5,7 +5,7 @@
  */
 
 /*
- * MCUboot image overlay (auto-discovered as sysbuild/mcuboot.overlay).
+ * MCUboot image overlay.
  * Reuses the application flash partition map, then boots from the MCUboot
  * partition.
  */

@@ -59,7 +59,7 @@ static bool prov_model_id_present(void)
 	return (psa_its_get_info(FP_ITS_MODEL_ID_UID, &info) == PSA_SUCCESS);
 }
 
-/* Check if data been provisioned into both the KMU and Internal Trusted Storage */
+/* Check if data has been provisioned into both the KMU and Internal Trusted Storage */
 static bool prov_data_present(void)
 {
 	return prov_kmu_key_present() && prov_model_id_present();

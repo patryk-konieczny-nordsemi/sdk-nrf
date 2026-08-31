@@ -30,8 +30,6 @@ extern "C" {
 #include <zephyr/sys/util.h>
 
 #include <psa/crypto.h>
-#include <psa/crypto_extra.h>
-#include <psa/internal_trusted_storage.h>
 #include <psa/storage_common.h>
 
 /** @brief Source data encoding for a provision entry. */

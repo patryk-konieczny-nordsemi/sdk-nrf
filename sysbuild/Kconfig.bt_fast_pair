@@ -18,36 +18,36 @@ choice BT_FAST_PAIR_PROVISION_SOURCE
 	  sysbuild. It does not replace the corresponding choice in the application
 	  Fast Pair Kconfig tree.
 
-	config BT_FAST_PAIR_PROVISION_PARTITION
-		bool "Flash partition (build-time hex merge)"
-		help
-		  Generate a Fast Pair provisioning hex file at build time and merge it
-		  into the bt_fast_pair flash partition in the final image.
+config BT_FAST_PAIR_PROVISION_PARTITION
+	bool "Flash partition (build-time hex merge)"
+	help
+	  Generate a Fast Pair provisioning hex file at build time and merge it
+	  into the bt_fast_pair flash partition in the final image.
 
-		  Use this on targets that define a bt_fast_pair partition (Partition
-		  Manager or devicetree). Sysbuild generates the hex when Model ID and
-		  Anti-Spoofing key are set (see SB_CONFIG_BT_FAST_PAIR_PROV_DATA).
+	  Use this on targets that define a bt_fast_pair partition (Partition
+	  Manager or devicetree). Sysbuild generates the hex when Model ID and
+	  Anti-Spoofing key are set (see SB_CONFIG_BT_FAST_PAIR_PROV_DATA).
 
-		  Typical for builds without secure storage
-		  (no CONFIG_SECURE_STORAGE nor TF-M)
+	  Typical for builds without secure storage
+	  (no CONFIG_SECURE_STORAGE nor TF-M)
 
-	config BT_FAST_PAIR_PROVISION_SECURE_STORAGE
-		bool "KMU and Internal Trusted Storage (runtime provisioner)"
-		help
-		  Store credentials in hardware-protected storage instead of a flash
-		  partition:
-		  - Anti-Spoofing private key in a CRACEN KMU slot
-		  (SB_CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY_KMU_SLOT)
-		  - Model ID in PSA Internal Trusted Storage
-		  (SB_CONFIG_BT_FAST_PAIR_MODEL_ID_ITS_ID)
+config BT_FAST_PAIR_PROVISION_SECURE_STORAGE
+	bool "KMU and Internal Trusted Storage (runtime provisioner)"
+	help
+	  Store credentials in hardware-protected storage instead of a flash
+	  partition:
+	  - Anti-Spoofing private key in a CRACEN KMU slot
+	  (SB_CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY_KMU_SLOT)
+	  - Model ID in PSA Internal Trusted Storage
+	  (SB_CONFIG_BT_FAST_PAIR_MODEL_ID_ITS_ID)
 
-		  Requires a runtime provisioner image
-		  (SB_CONFIG_BT_FAST_PAIR_RUNTIME_PROVISIONER) to write credentials
-		  before the main application runs. The main application then reads
-		  from KMU/ITS at runtime.
+	  Requires a runtime provisioner image
+	  (SB_CONFIG_BT_FAST_PAIR_RUNTIME_PROVISIONER) to write credentials
+	  before the main application runs. The main application then reads
+	  from KMU/ITS at runtime.
 
-		  Slot and ITS UID values must match on provisioner and application
-		  images; sysbuild forwards them to both via the Kconfig bridge.
+	  Slot and ITS UID values must match on provisioner and application
+	  images; sysbuild forwards them to both via the Kconfig bridge.
 
 endchoice
 
@@ -62,7 +62,7 @@ config BT_FAST_PAIR_CREDENTIALS_PRESENT
 	  (Model ID not equal to the 0x1000000 unset default, and key string
 	  non-empty).
 
-	  Does not verify Model ID or Private Anti Spoofing Key encoding.
+	  Does not verify Model ID or Private Anti-Spoofing Key encoding.
 
 config BT_FAST_PAIR_RUNTIME_PROVISIONER
 	bool "Build runtime provisioner image"
@@ -113,7 +113,7 @@ if BT_FAST_PAIR_PROVISION_SECURE_STORAGE
 
 config BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY_KMU_SLOT
 	int "CRACEN KMU slot for the Anti-Spoofing private key"
-	range 0 179
+	range 0 178
 	default 30
 	help
 	  KMU slot index (RAW usage scheme) for the Anti-Spoofing Private Key
@@ -122,6 +122,8 @@ config BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY_KMU_SLOT
 	  into this slot; the main Fast Pair application reads it from KMU at
 	  runtime instead of the bt_fast_pair flash partition. Must match on
 	  provisioner and application images (sysbuild forwards this value to both).
+	  The Anti-Spoofing Private Key occupies two consecutive KMU slots
+	  (128-bit each): slot n (this value) and slot n+1.
 
 config BT_FAST_PAIR_MODEL_ID_ITS_ID
 	hex "PSA Internal Trusted Storage UID for the Model ID"
@@ -134,7 +136,7 @@ config BT_FAST_PAIR_MODEL_ID_ITS_ID
 	  of the bt_fast_pair flash partition. Must match on provisioner and
 	  application images (sysbuild forwards this value to both).
 
-endif #BT_FAST_PAIR_PROVISION_SECURE_STORAGE
+endif # BT_FAST_PAIR_PROVISION_SECURE_STORAGE
 
 config BT_FAST_PAIR_PROV_DATA
 	bool
