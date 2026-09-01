@@ -116,14 +116,18 @@ struct provisioner_kmu_entry {
 /**
  * @brief Define a static provisioner data descriptor.
  *
- * @param _name           Symbol name for the @ref provisioner_data instance.
- * @param _data_ptr       Source data pointer.
- * @param _format         @ref provisioner_data_format value.
+ * Helper macro that defines a @c static const @ref provisioner_data object.
+ * Pass the result to @ref PROVISIONER_ENTRY_ITS_REGISTER() or
+ * @ref PROVISIONER_ENTRY_KMU_REGISTER() as the provision payload.
+ *
+ * @param _name Symbol name for the @ref provisioner_data instance.
+ * @param _data Source data object.
+ * @param _format Encoding of @p _data (@ref provisioner_data_format).
  */
-#define PROVISIONER_DATA_DEFINE(_name, _data_ptr, _format)			\
+#define PROVISIONER_DATA_DEFINE(_name, _data, _format)				\
 	static const struct provisioner_data _name = {				\
-		.data = (_data_ptr),						\
-		.payload_length = sizeof(_data_ptr),				\
+		.data = (_data),						\
+		.payload_length = sizeof(_data),				\
 		.format = (_format),						\
 	}
 

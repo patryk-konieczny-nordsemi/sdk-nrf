@@ -7,14 +7,12 @@
 #include <errno.h>
 #include <zephyr/init.h>
 #include <psa/crypto.h>
-
-#include <cracen_psa_kmu.h>
-
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(fp_crypto, CONFIG_FP_CRYPTO_LOG_LEVEL);
 
 #include "fp_crypto.h"
+#include "fp_registration_data.h"
 
 int fp_crypto_sha256(uint8_t *out, const uint8_t *in, size_t data_len)
 {
@@ -253,7 +251,6 @@ static int fp_crypto_psa_ecdh_shared_secret(uint8_t *secret_key, const uint8_t *
 int fp_crypto_ecdh_shared_secret(uint8_t *secret_key, const uint8_t *public_key,
 				 const uint8_t *private_key)
 {
-
 	int err = 0;
 	psa_key_id_t priv_key_id;
 	psa_status_t status;
@@ -263,9 +260,12 @@ int fp_crypto_ecdh_shared_secret(uint8_t *secret_key, const uint8_t *public_key,
 		 * key id and never imported in plaintext, so the raw private_key buffer is
 		 * unused in this configuration.
 		 */
-		ARG_UNUSED(private_key);
-		priv_key_id = PSA_KEY_ID_FROM_CRACEN_KMU_SLOT(CRACEN_KMU_KEY_USAGE_SCHEME_RAW,
-				CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY_KMU_SLOT);
+		err = fp_get_anti_spoofing_priv_key_id(&priv_key_id);
+		if (err) {
+			LOG_ERR("Failed to get private Anti-Spoofing Key ID (err: %d)", err);
+			return err;
+		}
+
 	} else {
 		priv_key_id = import_ecdh_priv_key(private_key);
 	}

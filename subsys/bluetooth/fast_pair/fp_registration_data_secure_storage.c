@@ -109,6 +109,18 @@ int fp_reg_data_get_model_id(uint8_t *buf, size_t size)
 	return 0;
 }
 
+int fp_get_anti_spoofing_priv_key_id(psa_key_id_t *key_id)
+{
+	if (key_id == NULL) {
+		return -EINVAL;
+	}
+
+	*key_id = PSA_KEY_ID_FROM_CRACEN_KMU_SLOT(CRACEN_KMU_KEY_USAGE_SCHEME_RAW,
+		CONFIG_BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY_KMU_SLOT);
+
+	return 0;
+}
+
 static int fp_reg_data_init(void)
 {
 	if (is_enabled) {

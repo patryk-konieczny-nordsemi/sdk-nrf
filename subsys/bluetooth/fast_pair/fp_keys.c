@@ -219,6 +219,7 @@ static int key_gen_public_key(const struct bt_conn *conn,
 	uint8_t priv_key[FP_REG_DATA_ANTI_SPOOFING_PRIV_KEY_LEN];
 	uint8_t ecdh_secret[FP_CRYPTO_ECDH_SHARED_KEY_LEN];
 
+	/* Partition provisioning: load plaintext key. KMU path uses key id in ECDH instead. */
 	if (IS_ENABLED(CONFIG_BT_FAST_PAIR_PROVISION_PARTITION)) {
 		err = fp_get_anti_spoofing_priv_key(priv_key, sizeof(priv_key));
 	}
