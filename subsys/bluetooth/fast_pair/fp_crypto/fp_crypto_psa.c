@@ -7,12 +7,12 @@
 #include <errno.h>
 #include <zephyr/init.h>
 #include <psa/crypto.h>
-
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(fp_crypto, CONFIG_FP_CRYPTO_LOG_LEVEL);
 
 #include "fp_crypto.h"
+#include "fp_registration_data.h"
 
 int fp_crypto_sha256(uint8_t *out, const uint8_t *in, size_t data_len)
 {
@@ -193,7 +193,8 @@ int fp_crypto_aes128_ecb_decrypt(uint8_t *out, const uint8_t *in, const uint8_t 
 
 static psa_key_id_t import_ecdh_priv_key(const uint8_t *data)
 {
-	static const size_t len = 32;
+	/* SECP-R1 256-bit private key (256 bits = 32 bytes). */
+	static const size_t len = FP_CRYPTO_ECDH_SHARED_KEY_LEN;
 
 	psa_status_t status;
 	psa_key_id_t key_id = PSA_KEY_ID_NULL;
@@ -216,7 +217,7 @@ static psa_key_id_t import_ecdh_priv_key(const uint8_t *data)
 	return key_id;
 }
 
-int fp_crypto_psa_ecdh_shared_secret(uint8_t *secret_key, const uint8_t *public_key,
+static int fp_crypto_psa_ecdh_shared_secret(uint8_t *secret_key, const uint8_t *public_key,
 				     psa_key_id_t priv_key_id)
 {
 	/* Marker of the uncompressed binary format for a point on an elliptic curve. */
@@ -250,23 +251,44 @@ int fp_crypto_psa_ecdh_shared_secret(uint8_t *secret_key, const uint8_t *public_
 int fp_crypto_ecdh_shared_secret(uint8_t *secret_key, const uint8_t *public_key,
 				 const uint8_t *private_key)
 {
-
 	int err = 0;
 	psa_key_id_t priv_key_id;
 	psa_status_t status;
 
-	priv_key_id = import_ecdh_priv_key(private_key);
+	if (IS_ENABLED(CONFIG_BT_FAST_PAIR_PROVISION_SECURE_STORAGE)) {
+		/* The Anti-Spoofing private key resides in the KMU. It is referenced by its
+		 * key id and never imported in plaintext, so the raw private_key buffer is
+		 * unused in this configuration.
+		 */
+		err = fp_get_anti_spoofing_priv_key_id(&priv_key_id);
+		if (err) {
+			LOG_ERR("Failed to get private Anti-Spoofing Key ID (err: %d)", err);
+			return err;
+		}
+
+	} else {
+		priv_key_id = import_ecdh_priv_key(private_key);
+	}
+
 	if (priv_key_id == PSA_KEY_ID_NULL) {
-		LOG_ERR("import_ecdh_shared_secret_key failed");
+		LOG_ERR("ECDH private key setup failed");
 		return -EIO;
 	}
 
 	err = fp_crypto_psa_ecdh_shared_secret(secret_key, public_key, priv_key_id);
 
-	status = psa_destroy_key(priv_key_id);
+	if (IS_ENABLED(CONFIG_BT_FAST_PAIR_PROVISION_SECURE_STORAGE)) {
+		/* The KMU key is persistent - only drop its volatile copy, do not destroy it. */
+		status = psa_purge_key(priv_key_id);
+	} else {
+		status = psa_destroy_key(priv_key_id);
+	}
+
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("psa_destroy_key failed (err: %d)", status);
-		/* Overwrite error code to forward information about psa_destroy_key failure. */
+		LOG_ERR("%s failed (err: %d)",
+			IS_ENABLED(CONFIG_BT_FAST_PAIR_PROVISION_SECURE_STORAGE) ? "psa_purge_key" :
+								    "psa_destroy_key",
+			status);
 		err = -ECANCELED;
 	}
 

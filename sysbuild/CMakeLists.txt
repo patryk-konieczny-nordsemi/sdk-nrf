@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2023 Nordic Semiconductor
+# Copyright (c) 2023-2026 Nordic Semiconductor
 #
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 #
@@ -855,6 +855,10 @@ function(${SYSBUILD_CURRENT_MODULE_NAME}_pre_cmake)
   if(SB_CONFIG_BT_FAST_PAIR_PROV_DATA AND SB_CONFIG_PARTITION_MANAGER)
     # The PM properties for the Fast Pair hex file must be set in the pre-CMake stage.
     include(${ZEPHYR_NRF_MODULE_DIR}/cmake/sysbuild/fast_pair/hex.cmake)
+  endif()
+
+  if(SB_CONFIG_BT_FAST_PAIR_PROVISION_SECURE_STORAGE OR SB_CONFIG_BT_FAST_PAIR_RUNTIME_PROVISIONER)
+    include(${ZEPHYR_NRF_MODULE_DIR}/cmake/sysbuild/fast_pair/kconfig_bridge.cmake)
   endif()
 
   if(SB_CONFIG_WIFI_NRF70)
