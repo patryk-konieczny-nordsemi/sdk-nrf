@@ -10,56 +10,6 @@
 #include "fp_crypto_sizes.h"
 #include "fp_crypto_spe_client.h"
 
-psa_status_t fp_crypto_spe_aes256_ecb_encrypt(uint8_t *out, const uint8_t *in, const uint8_t *k)
-{
-	struct fp_crypto_req req = {
-        .op = FP_CRYPTO_OP_AES256_ECB_ENCRYPT,
-    };
-
-	if (!out || !in || !k) {
-		return PSA_ERROR_INVALID_ARGUMENT;
-	}
-
-    psa_invec in_vec[] = {
-        { &req, sizeof(req) },
-        { in,   FP_CRYPTO_AES256_BLOCK_LEN },
-        { k,    FP_CRYPTO_AES256_KEY_LEN },
-    };
-
-    psa_outvec out_vec[] = {
-        { out, FP_CRYPTO_AES256_BLOCK_LEN },
-    };
-
-    return psa_call(TFM_FP_CRYPTO_HANDLE, PSA_IPC_CALL,
-                      in_vec, ARRAY_SIZE(in_vec),
-                      out_vec, ARRAY_SIZE(out_vec));
-}
-
-psa_status_t fp_crypto_spe_aes256_ecb_decrypt(uint8_t *out, const uint8_t *in, const uint8_t *k)
-{
-	struct fp_crypto_req req = {
-        .op = FP_CRYPTO_OP_AES256_ECB_DECRYPT,
-    };
-
-	if (!out || !in || !k) {
-		return PSA_ERROR_INVALID_ARGUMENT;
-	}
-
-    psa_invec in_vec[] = {
-        { &req, sizeof(req) },
-        { in,   FP_CRYPTO_AES256_BLOCK_LEN },
-        { k,    FP_CRYPTO_AES256_KEY_LEN },
-    };
-
-    psa_outvec out_vec[] = {
-        { out, FP_CRYPTO_AES256_BLOCK_LEN },
-    };
-
-    return psa_call(TFM_FP_CRYPTO_HANDLE, PSA_IPC_CALL,
-                      in_vec, ARRAY_SIZE(in_vec),
-                      out_vec, ARRAY_SIZE(out_vec));
-}
-
 #define FP_CRYPTO_ECC_SCALAR_INPUT_LEN 32U
 
 psa_status_t fp_crypto_spe_ecc_secp160r1_calculate(uint8_t *out, uint8_t *mod,

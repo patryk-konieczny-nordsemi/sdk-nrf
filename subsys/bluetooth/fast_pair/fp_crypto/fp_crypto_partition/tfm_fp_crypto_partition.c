@@ -41,56 +41,6 @@ static void fp_crypto_memcpy_swap(void *dst, const void *src, size_t len)
 	}
 }
 
-static psa_status_t tfm_fp_crypto_aes256_ecb_encrypt(const psa_msg_t *msg)
-{
-    uint8_t in[FP_CRYPTO_AES256_BLOCK_LEN];
-    uint8_t k[FP_CRYPTO_AES256_KEY_LEN];
-    uint8_t out[FP_CRYPTO_AES256_BLOCK_LEN];
-
-    if (msg->in_size[1] != FP_CRYPTO_AES256_BLOCK_LEN ||
-        msg->in_size[2] != FP_CRYPTO_AES256_KEY_LEN ||
-        msg->out_size[0] != FP_CRYPTO_AES256_BLOCK_LEN) {
-        return PSA_ERROR_PROGRAMMER_ERROR;
-    }
-
-    if (psa_read(msg->handle, 1, in, sizeof(in)) != sizeof(in) ||
-        psa_read(msg->handle, 2, k, sizeof(k)) != sizeof(k)) {
-        return PSA_ERROR_PROGRAMMER_ERROR;
-    }
-
-    ocrypto_aes_ecb_encrypt(out, in, FP_CRYPTO_AES256_BLOCK_LEN,
-                            k, FP_CRYPTO_AES256_KEY_LEN);
-
-	psa_write(msg->handle, 0, out, sizeof(out));
-
-    return PSA_SUCCESS;
-}
-
-static psa_status_t tfm_fp_crypto_aes256_ecb_decrypt(const psa_msg_t *msg)
-{
-    uint8_t in[FP_CRYPTO_AES256_BLOCK_LEN];
-    uint8_t k[FP_CRYPTO_AES256_KEY_LEN];
-    uint8_t out[FP_CRYPTO_AES256_BLOCK_LEN];
-
-    if (msg->in_size[1] != FP_CRYPTO_AES256_BLOCK_LEN ||
-        msg->in_size[2] != FP_CRYPTO_AES256_KEY_LEN ||
-        msg->out_size[0] != FP_CRYPTO_AES256_BLOCK_LEN) {
-        return PSA_ERROR_PROGRAMMER_ERROR;
-    }
-
-    if (psa_read(msg->handle, 1, in, sizeof(in)) != sizeof(in) ||
-        psa_read(msg->handle, 2, k, sizeof(k)) != sizeof(k)) {
-        return PSA_ERROR_PROGRAMMER_ERROR;
-    }
-
-    ocrypto_aes_ecb_decrypt(out, in, FP_CRYPTO_AES256_BLOCK_LEN,
-                            k, FP_CRYPTO_AES256_KEY_LEN);
-
-	psa_write(msg->handle, 0, out, sizeof(out));
-
-    return PSA_SUCCESS;
-}
-
 static psa_status_t tfm_fp_crypto_ecc_secp160r1_calculate(const psa_msg_t *msg)
 {
 	uint8_t in[SECP160R1_DATA_LEN];
@@ -155,12 +105,6 @@ static psa_status_t tfm_fp_crypto_dispatch(const struct fp_crypto_req *req, cons
 {
 	INFO_UNPRIV("Called custom spe crypto: ");
 	switch (req->op) {
-	case FP_CRYPTO_OP_AES256_ECB_ENCRYPT:
-		INFO_UNPRIV("aes256_ecb_encrypt\n\r");
-		return tfm_fp_crypto_aes256_ecb_encrypt(msg);
-	case FP_CRYPTO_OP_AES256_ECB_DECRYPT:
-		INFO_UNPRIV("aes256_ecb_decrypt\n\r");
-		return tfm_fp_crypto_aes256_ecb_decrypt(msg);
 	case FP_CRYPTO_OP_SECP160R1_CALCULATE:
 		INFO_UNPRIV("secp160r1_calculate\n\r");
 		return tfm_fp_crypto_ecc_secp160r1_calculate(msg);
