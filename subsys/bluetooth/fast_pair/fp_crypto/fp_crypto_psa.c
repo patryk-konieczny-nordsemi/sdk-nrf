@@ -296,32 +296,55 @@ int fp_crypto_ecdh_shared_secret(uint8_t *secret_key, const uint8_t *public_key,
 	return err;
 }
 
-int fp_crypto_aes256_ecb_encrypt(uint8_t *out, const uint8_t *in, const uint8_t *k)
-{	
-	if (IS_ENABLED(CONFIG_BUILD_WITH_TFM)) {
-		psa_status_t status = fp_crypto_spe_aes256_ecb_encrypt(out, in, k);
-		if (status != PSA_SUCCESS) {
-			return -EIO;
-		}
+static int fp_crypto_aes256_ecb_crypt(uint8_t *out, const uint8_t *in, const uint8_t *k,
+				      bool encrypt)
+{
+	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
+	psa_key_id_t key_id;
+	size_t olen = 0;
+	psa_status_t status;
+	int err = 0;
 
-		return 0;
+	psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT);
+	psa_set_key_lifetime(&attr, PSA_KEY_LIFETIME_VOLATILE);
+	psa_set_key_algorithm(&attr, PSA_ALG_ECB_NO_PADDING);
+	psa_set_key_type(&attr, PSA_KEY_TYPE_AES);
+	psa_set_key_bits(&attr, FP_CRYPTO_AES256_KEY_LEN * CHAR_BIT);
+
+	if (psa_import_key(&attr, k, FP_CRYPTO_AES256_KEY_LEN, &key_id) != PSA_SUCCESS) {
+		return -EIO;
 	}
 
-	return -ENOTSUP;
+	if (encrypt) {
+		status = psa_cipher_encrypt(key_id, PSA_ALG_ECB_NO_PADDING,
+					    in, FP_CRYPTO_AES256_BLOCK_LEN,
+					    out, FP_CRYPTO_AES256_BLOCK_LEN, &olen);
+	} else {
+		status = psa_cipher_decrypt(key_id, PSA_ALG_ECB_NO_PADDING,
+					    in, FP_CRYPTO_AES256_BLOCK_LEN,
+					    out, FP_CRYPTO_AES256_BLOCK_LEN, &olen);
+	}
+
+	if (status != PSA_SUCCESS || olen != FP_CRYPTO_AES256_BLOCK_LEN) {
+		err = -EIO;
+	}
+
+	if (psa_destroy_key(key_id) != PSA_SUCCESS) {
+		err = -ECANCELED;
+	}
+
+	psa_reset_key_attributes(&attr);
+	return err;
+}
+
+int fp_crypto_aes256_ecb_encrypt(uint8_t *out, const uint8_t *in, const uint8_t *k)
+{
+	return fp_crypto_aes256_ecb_crypt(out, in, k, true);
 }
 
 int fp_crypto_aes256_ecb_decrypt(uint8_t *out, const uint8_t *in, const uint8_t *k)
 {
-	if (IS_ENABLED(CONFIG_BUILD_WITH_TFM)) {
-		psa_status_t status = fp_crypto_spe_aes256_ecb_decrypt(out, in, k);
-		if (status != PSA_SUCCESS) {
-			return -EIO;
-		}
-
-		return 0;
-	}
-
-	return -ENOTSUP;
+	return fp_crypto_aes256_ecb_crypt(out, in, k, false);
 }
 
 int fp_crypto_ecc_secp160r1_calculate(uint8_t *out, uint8_t *mod, const uint8_t *in, size_t datalen)
