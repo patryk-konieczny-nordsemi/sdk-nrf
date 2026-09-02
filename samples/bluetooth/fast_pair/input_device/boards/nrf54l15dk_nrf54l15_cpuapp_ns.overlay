@@ -13,24 +13,9 @@
 		#size-cells = <1>;
 
 		/*
-		 * The following sample defines this flash partitioning:
-		 *
-		 *   slot0_s_partition ........ 512 KB   (secure image + NSC veneers)
-		 *   tfm_storage_partition ..... 40 KB   (secure; container of:)
-		 *       tfm_its_partition ..... 16 KB
-		 *       tfm_otp_partition ......8 KB
-		 *       tfm_ps_partition ...... 16 KB
-		 *   --- Secure / Non-Secure boundary (non_secure_partition_base) ---
-		 *   slot0_ns_partition ....... 940 KB   (non-secure application)
-		 *   bt_fast_pair_partition .... 4 KB    (non-secure fast-pair storage)
-		 *   storage_partition ......... 20 KB   (non-secure storage)
-		 *
 		 * This is an example of partitioning flash for a non-MCUboot project
 		 * with TF-M enabled. Everything up to and including tfm_storage is
 		 * Secure; slot0_ns and everything above the boundary is Non-Secure.
-		 *
-		 * TO DO: Move the contents of bt_fast_pair_partition into secure
-		 *        partition and remove unused partitions.
 		 */
 
 		slot0_s_partition: partition@0 {
@@ -78,12 +63,7 @@
 		slot0_ns_partition: partition@8a000 {
 			compatible = "zephyr,mapped-partition";
 			label = "image-0-nonsecure";
-			reg = <0x8a000 DT_SIZE_K(940)>;
-		};
-
-		bt_fast_pair_partition: partition@177000 {
-			compatible = "zephyr,mapped-partition";
-			reg = <0x177000 DT_SIZE_K(4)>;
+			reg = <0x8a000 DT_SIZE_K(944)>;
 		};
 
 		storage_partition: partition@178000 {
