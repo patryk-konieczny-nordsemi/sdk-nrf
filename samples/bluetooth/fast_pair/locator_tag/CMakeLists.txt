@@ -42,5 +42,7 @@ else()
   if(CONFIG_BT_FAST_PAIR_FHN_DULT_MOTION_DETECTOR)
     add_subdirectory(src/motion_detector)
   endif()
+
+  target_link_libraries(app PRIVATE nrfxlib_crypto)
   # NORDIC SDK APP END
 endif()

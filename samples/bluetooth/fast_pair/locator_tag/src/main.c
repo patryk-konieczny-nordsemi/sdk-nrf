@@ -20,6 +20,12 @@
 #include "app_factory_reset.h"
 #include "app_ring.h"
 #include "app_ui.h"
+#include <stdbool.h>
+
+#include <cracen_psa_kmu.h>
+#include <cracen_psa_key_ids.h>
+#include <psa/crypto.h>
+#include <ocrypto_aes_ecb.h>
 
 #ifdef CONFIG_BT_FAST_PAIR_FHN_DULT_MOTION_DETECTOR
 #include "app_motion_detector.h"
@@ -757,6 +763,65 @@ int main(void)
 	LOG_INF("Sample has started");
 
 	app_ui_state_change_indicate(APP_UI_STATE_APP_RUNNING, true);
+
+	// rotate a secure key in KMU
+	uint32_t test_key_value[8] = {0,0,0,0,0,0,0,0};
+	psa_key_id_t test_key_id = PSA_KEY_ID_NULL;
+
+	uint8_t test_data_in[32] = {
+		0x12, 0x14, 0xFF, 0x10, 0x12, 0x14, 0xFF, 0x10,
+		0x12, 0x14, 0xFF, 0x17, 0x12, 0x14, 0xFF, 0x17,
+		0x12, 0x14, 0xFF, 0x17, 0x12, 0x14, 0xFF, 0x17,
+		0x12, 0x14, 0xFF, 0x17, 0x12, 0x14, 0xFF, 0x17
+	};
+
+	while (true) {
+		psa_status_t status;
+		psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
+
+		k_msleep(2500);
+
+		status = psa_destroy_key(PSA_KEY_ID_FROM_CRACEN_KMU_SLOT(CRACEN_KMU_KEY_USAGE_SCHEME_PROTECTED, 15));
+		if (status != PSA_SUCCESS) {
+			LOG_ERR("Failed to destroy key");
+			continue;
+		}
+
+		psa_set_key_id(&attr, PSA_KEY_ID_FROM_CRACEN_KMU_SLOT(CRACEN_KMU_KEY_USAGE_SCHEME_PROTECTED, 15));
+		psa_set_key_type(&attr, PSA_KEY_TYPE_AES);
+		psa_set_key_bits(&attr, 256);
+		psa_set_key_lifetime(&attr, PSA_KEY_LIFETIME_FROM_PERSISTENCE_AND_LOCATION(PSA_KEY_PERSISTENCE_DEFAULT, PSA_KEY_LOCATION_CRACEN_KMU));
+		psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT);
+		psa_set_key_algorithm(&attr, PSA_ALG_ECB_NO_PADDING);
+
+		status = psa_import_key(&attr, (uint8_t *)(&test_key_value), 32, &test_key_id);
+		psa_reset_key_attributes(&attr);
+		if (status != PSA_SUCCESS) {
+			LOG_ERR("Failed to load new key into KMU");
+			continue;
+		}
+
+		// comapre Oberon VS PSA
+		LOG_INF("Key value: %u", test_key_value[0]);
+
+		test_key_id = PSA_KEY_ID_FROM_CRACEN_KMU_SLOT(CRACEN_KMU_KEY_USAGE_SCHEME_PROTECTED, 15);
+		uint8_t psa_out[32];
+		size_t psa_out_len = 0;
+		status = psa_cipher_encrypt(test_key_id, PSA_ALG_ECB_NO_PADDING, test_data_in,  32, psa_out, 32, &psa_out_len);
+		if (status != PSA_SUCCESS) {
+			LOG_ERR("PSA: Failed to Encrypt");
+		} else {
+			LOG_HEXDUMP_INF(psa_out, psa_out_len, "PSA OUT:");
+		}
+
+		uint8_t ob_out[32];
+		ocrypto_aes_ecb_encrypt(ob_out, test_data_in, 32, (uint8_t *)(&test_key_value), 32);
+		LOG_HEXDUMP_INF(ob_out, 32, "OBERON OUT:");
+
+		// compare end
+
+		test_key_value[0]++;
+	}
 
 	return 0;
 }
