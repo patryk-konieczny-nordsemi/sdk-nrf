@@ -58,3 +58,4 @@ target_link_libraries(fhn PRIVATE fp_crypto)
 target_link_libraries(fhn PRIVATE fp_storage)
 
 add_subdirectory(pf)
+add_subdirectory(eik_operations)
