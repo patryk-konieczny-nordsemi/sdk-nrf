@@ -7,8 +7,8 @@
 #include <stdbool.h>
 #include "fp_crypto.h"
 #include "fp_fhn_auth.h"
-#include "fp_fhn_state.h"
 #include "fp_storage_ak.h"
+#include "eik_operations.h"
 
 #include <zephyr/net_buf.h>
 
@@ -17,10 +17,6 @@ LOG_MODULE_REGISTER(fp_fhn_auth, CONFIG_BT_FAST_PAIR_LOG_LEVEL);
 
 #define AUTH_DATA_BUF_LEN      (100U)
 #define AUTH_DATA_RSP_END_BYTE (0x01)
-
-#define EIK_DERIVED_KEY_SEED_END_BYTE_LEN (1U)
-#define EIK_DERIVED_KEY_SEED_BUF_LEN \
-	(FP_FHN_STATE_EIK_LEN + EIK_DERIVED_KEY_SEED_END_BYTE_LEN)
 
 struct account_key_find_context {
 	struct net_buf_simple *auth_data_buf;
@@ -92,47 +88,6 @@ static void auth_data_rsp_encode(struct net_buf_simple *auth_data_buf,
 	net_buf_simple_add_u8(auth_data_buf, AUTH_DATA_RSP_END_BYTE);
 }
 
-
-static int eik_derived_auth_key_generate(uint8_t seed_end_byte,
-					 uint8_t *eik_derived_key,
-					 size_t eik_derived_key_len)
-{
-	int err;
-	uint8_t *eik;
-	uint8_t eik_derived_key_full[FP_CRYPTO_SHA256_HASH_LEN];
-
-	NET_BUF_SIMPLE_DEFINE(eik_derived_key_seed_buf, EIK_DERIVED_KEY_SEED_BUF_LEN);
-
-	/* Calculate the EIK Derived Key as the first 8 bytes of the following operation:
-	 * SHA256(Ephemeral Identity Key || seed end byte)
-	 */
-	eik = net_buf_simple_add(&eik_derived_key_seed_buf, FP_FHN_STATE_EIK_LEN);
-	net_buf_simple_add_u8(&eik_derived_key_seed_buf, seed_end_byte);
-
-	__ASSERT(eik_derived_key_seed_buf.len == EIK_DERIVED_KEY_SEED_BUF_LEN,
-		"Authentication: key generation: incorrect seed buf length");
-
-	err = fp_fhn_state_eik_read(eik);
-	if (err) {
-		LOG_ERR("Authentication: key generation: EIK read failed: %d", err);
-
-		return err;
-	}
-
-	err = fp_crypto_sha256(eik_derived_key_full,
-			       eik_derived_key_seed_buf.data,
-			       eik_derived_key_seed_buf.len);
-	if (err) {
-		LOG_ERR("Authentication: key generation: fp_crypto_sha256 failed: %d", err);
-
-		return err;
-	}
-
-	memcpy(eik_derived_key, eik_derived_key_full, eik_derived_key_len);
-
-	return 0;
-}
-
 int fp_fhn_auth_key_generate(enum fp_fhn_auth_key_type key_type,
 			     uint8_t *auth_key,
 			     size_t auth_key_len)
@@ -160,7 +115,7 @@ int fp_fhn_auth_key_generate(enum fp_fhn_auth_key_type key_type,
 		return -ENOTSUP;
 	}
 
-	err = eik_derived_auth_key_generate(seed_end_byte, auth_key, auth_key_len);
+	err = eik_derive_key(seed_end_byte, auth_key, auth_key_len);
 	if (err) {
 		return err;
 	}

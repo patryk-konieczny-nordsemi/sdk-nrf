@@ -39,17 +39,6 @@ extern "C" {
  */
 int fp_fhn_state_eid_read(uint8_t *eid);
 
-/** Read the currently provisioned Ephemeral Identity Key (EIK).
- *
- *  Length of buffer used to store the Ephemeral Identity Key (EIK) must at least
- *  be equal to 32 bytes.
- *
- * @param[out] eik Ephemeral Identity Key (EIK).
- *
- * @return 0 if the operation was successful. Otherwise, a (negative) error code is returned.
- */
-int fp_fhn_state_eik_read(uint8_t *eik);
-
 /** Encode the Elliptic Curve type configuration.
  *  The configuration is encoded as required by the FHN Accessory specification.
  *
@@ -67,16 +56,22 @@ uint8_t fp_fhn_state_ecc_type_encode(void);
  */
 int8_t fp_fhn_state_tx_power_encode(void);
 
-/** Provision or unprovision the beacon with the Ephemeral Identity Key (EIK).
+/** Provision or reprovision the beacon with a new Ephemeral Identity Key (EIK).
  *
- * @param[in] eik Ephemeral Identity Key (EIK).
- *                Non-NULL values are used to indicate provision operation
- *                and should point to the 32-byte buffer with the EIK.
- *                The NULL value is used to indicate unprovision operation.
+ *  The encrypted EIK is decrypted and stored through the EIK operations module.
+ *
+ * @param[in] encrypted_eik Encrypted Ephemeral Identity Key (EIK) (32 bytes).
+ * @param[in] account_key Account Key (16 bytes) used to decrypt the EIK.
  *
  * @return 0 if the operation was successful. Otherwise, a (negative) error code is returned.
  */
-int fp_fhn_state_eik_provision(const uint8_t *eik);
+int fp_fhn_state_eik_provision(const uint8_t *encrypted_eik, const uint8_t *account_key);
+
+/** Unprovision the beacon and delete the Ephemeral Identity Key (EIK).
+ *
+ * @return 0 if the operation was successful. Otherwise, a (negative) error code is returned.
+ */
+int fp_fhn_state_eik_unprovision(void);
 
 /** Activate the Unwanted Tracking Protection (UTP) mode.
  *

@@ -26,6 +26,7 @@ LOG_MODULE_REGISTER(fp_fhn_beacon_actions, CONFIG_BT_FAST_PAIR_LOG_LEVEL);
 #include "fp_fhn_state.h"
 #include "fp_crypto.h"
 #include "fp_storage_ak.h"
+#include "eik_operations.h"
 
 #include "beacon_actions_defs.h"
 
@@ -73,35 +74,6 @@ static bool owner_account_key_check(const struct fp_account_key *account_key, vo
 	ret = fp_storage_ak_is_owner(account_key);
 
 	return (ret > 0) ? true : false;
-}
-
-static bool eik_hash_compare(const uint8_t *eik_hash, const uint8_t *random_nonce)
-{
-	int err;
-	uint8_t eik_hash_local[FP_CRYPTO_SHA256_HASH_LEN];
-	uint8_t hash_input[FP_FHN_STATE_EIK_LEN + BEACON_ACTIONS_RANDOM_NONCE_LEN];
-
-	/* Calculate: (Ephemeral Identity Key || random_nonce) */
-	err = fp_fhn_state_eik_read(hash_input);
-	if (err) {
-		LOG_ERR("Beacon Actions: Ephemeral Identity Key Set/Clear request:"
-			" EIK read failed: %d", err);
-
-		return false;
-	}
-	memcpy(hash_input + FP_FHN_STATE_EIK_LEN,
-	       random_nonce,
-	       BEACON_ACTIONS_RANDOM_NONCE_LEN);
-
-	/* Generate local version of EIK Hash. */
-	err = fp_crypto_sha256(eik_hash_local, hash_input, sizeof(hash_input));
-	if (err) {
-		LOG_ERR("Beacon Actions: Hash Comparison: fp_crypto_sha256 failed: %d", err);
-
-		return false;
-	}
-
-	return !memcmp(eik_hash_local, eik_hash, EPHEMERAL_IDENTITY_KEY_REQ_EIK_HASH_LEN);
 }
 
 static const struct bt_gatt_attr *beacon_response_attr_get(void)
@@ -380,7 +352,6 @@ static ssize_t ephemeral_identity_key_set_handle(struct bt_conn *conn,
 	struct fp_fhn_auth_data auth_data;
 	struct fp_account_key account_key;
 	uint8_t *encrypted_eik;
-	uint8_t new_eik[EPHEMERAL_IDENTITY_KEY_SET_REQ_EIK_LEN];
 	const bool provisioned = bt_fast_pair_fhn_is_provisioned();
 	const uint8_t req_data_len = provisioned ?
 		EPHEMERAL_IDENTITY_KEY_SET_REQ_PROVISIONED_PAYLOAD_LEN :
@@ -447,31 +418,10 @@ static ssize_t ephemeral_identity_key_set_handle(struct bt_conn *conn,
 	/* Recover the Ephemeral Identity Key (EIK) by AES-ECB-128 with the matched
 	 * Account Key.
 	 */
-	err = fp_crypto_aes128_ecb_decrypt(new_eik, encrypted_eik, account_key.key);
+	err = fp_fhn_state_eik_provision(encrypted_eik, account_key.key);
 	if (err) {
 		LOG_ERR("Beacon Actions: Ephemeral Identity Key Set request:"
-			" Could not decrypt the first part of EIK:"
-			" fp_crypto_aes128_ecb_decrypt failed: %d", err);
-
-		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
-	}
-
-	err = fp_crypto_aes128_ecb_decrypt(new_eik + FP_CRYPTO_AES128_BLOCK_LEN,
-					   encrypted_eik + FP_CRYPTO_AES128_BLOCK_LEN,
-					   account_key.key);
-	if (err) {
-		LOG_ERR("Beacon Actions: Ephemeral Identity Key Set request:"
-			" Could not decrypt the second part of EIK:"
-			" fp_crypto_aes128_ecb_decrypt failed: %d", err);
-
-		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
-	}
-
-	err = fp_fhn_state_eik_provision(new_eik);
-	if (err) {
-		LOG_ERR("Beacon Actions: Ephemeral Identity Key Set request:"
-			" Beacon State provision failed: %d", err);
-
+			" EIK provisioning failed: %d", err);
 		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 	}
 
@@ -578,7 +528,7 @@ static ssize_t ephemeral_identity_key_clear_handle(struct bt_conn *conn,
 		return BT_GATT_ERR(BEACON_ACTIONS_ATT_ERR_UNAUTHENTICATED);
 	}
 
-	err = fp_fhn_state_eik_provision(NULL);
+	err = fp_fhn_state_eik_unprovision();
 	if (err) {
 		LOG_ERR("Beacon Actions: Ephemeral Identity Key Clear request:"
 			" Beacon State unprovision failed: %d", err);
@@ -633,7 +583,6 @@ static ssize_t ephemeral_identity_key_read_handle(struct bt_conn *conn,
 	struct fp_fhn_auth_data auth_data;
 	uint8_t recovery_key[FP_FHN_AUTH_KEY_RECOVERY_LEN];
 	struct fp_account_key owner_account_key;
-	uint8_t eik[EPHEMERAL_IDENTITY_KEY_READ_RSP_EIK_LEN];
 	uint8_t encrypted_eik[EPHEMERAL_IDENTITY_KEY_READ_RSP_EIK_LEN];
 	static const uint8_t req_data_len = EPHEMERAL_IDENTITY_KEY_READ_REQ_PAYLOAD_LEN;
 	static const uint8_t rsp_data_len = EPHEMERAL_IDENTITY_KEY_READ_RSP_PAYLOAD_LEN;
@@ -691,14 +640,6 @@ static ssize_t ephemeral_identity_key_read_handle(struct bt_conn *conn,
 	}
 
 	/* Fetch and encrypt the EIK. */
-	err = fp_fhn_state_eik_read(eik);
-	if (err) {
-		LOG_ERR("Beacon Actions: Ephemeral Identity Key Read request:"
-			" EIK read failed: %d", err);
-
-		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
-	}
-
 	err = fp_storage_ak_find(&owner_account_key, owner_account_key_check, NULL);
 	if (err) {
 		LOG_ERR("Beacon Actions: Ephemeral Identity Key Read request:"
@@ -707,22 +648,10 @@ static ssize_t ephemeral_identity_key_read_handle(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 	}
 
-	err = fp_crypto_aes128_ecb_encrypt(encrypted_eik, eik, owner_account_key.key);
+	err = eik_get_encrypted(owner_account_key.key, encrypted_eik);
 	if (err) {
 		LOG_ERR("Beacon Actions: Ephemeral Identity Key Read request:"
-			" Could not encrypt the first part of EIK:"
-			" fp_crypto_aes128_ecb_encrypt failed: %d", err);
-
-		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
-	}
-
-	err = fp_crypto_aes128_ecb_encrypt(encrypted_eik + FP_CRYPTO_AES128_BLOCK_LEN,
-					   eik + FP_CRYPTO_AES128_BLOCK_LEN,
-					   owner_account_key.key);
-	if (err) {
-		LOG_ERR("Beacon Actions: Ephemeral Identity Key Read request:"
-			" Could not encrypt the second part of EIK:"
-			" fp_crypto_aes128_ecb_encrypt failed: %d", err);
+			" EIK encryption failed: %d", err);
 
 		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 	}

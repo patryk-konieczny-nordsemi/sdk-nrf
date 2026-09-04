@@ -22,6 +22,8 @@ bool eik_core_hash_compare(const uint8_t *eik, const uint8_t *eik_hash, const ui
 	uint8_t eik_hash_local[FP_CRYPTO_SHA256_HASH_LEN];
 	uint8_t hash_input[FP_FHN_STATE_EIK_LEN + EIK_RANDOM_NONCE_LEN];
 
+	__ASSERT_NO_MSG(eik && eik_hash && random_nonce); 
+
 	/* Calculate: (Ephemeral Identity Key || random_nonce) */
 	memcpy(hash_input, eik, FP_FHN_STATE_EIK_LEN);
 	memcpy(hash_input + FP_FHN_STATE_EIK_LEN, random_nonce, EIK_RANDOM_NONCE_LEN);
@@ -41,6 +43,9 @@ int eik_core_eid_encode(const uint8_t *eik, const uint8_t *eid_seed_buf_data,
 	uint8_t encrypted_eid_seed[FP_CRYPTO_AES256_BLOCK_LEN];
 	uint8_t secp_mod_res[SECP_MOD_RES_LEN];
 	uint8_t mod_res_hash[FP_CRYPTO_SHA256_HASH_LEN];
+
+	__ASSERT_NO_MSG(eik && eid_seed_buf_data && fhn_eid &&
+		fhn_frame_hashed_flags_xor_operand);
 
 	/* Encrypt the EID seed data with the Ephemeral Identity Key
 	 * using the AES-ECB-256 scheme.
@@ -87,6 +92,8 @@ int eik_core_provision_encrypted(const uint8_t *encrypted_eik, const uint8_t *ac
 {
 	int err;
 
+	__ASSERT_NO_MSG(encrypted_eik && account_key && eik);
+
 	err = fp_crypto_aes128_ecb_decrypt(eik, encrypted_eik, account_key);
 	if (err) {
 		return err;
@@ -106,6 +113,8 @@ int eik_core_get_encrypted(const uint8_t *eik, const uint8_t *owner_account_key,
 			   uint8_t *encrypted_eik)
 {
 	int err;
+
+	__ASSERT_NO_MSG(eik && owner_account_key && encrypted_eik);
 
 	err = fp_crypto_aes128_ecb_encrypt(encrypted_eik, eik, owner_account_key);
 	if (err) {
@@ -128,6 +137,9 @@ int eik_core_derive_key(const uint8_t *eik, uint8_t seed_end_byte, uint8_t *eik_
 	int err;
 	uint8_t hash_input[FP_FHN_STATE_EIK_LEN + 1];
 	uint8_t eik_derived_key_full[FP_CRYPTO_SHA256_HASH_LEN];
+
+	__ASSERT_NO_MSG(eik && eik_derived_key); 
+	__ASSERT_NO_MSG(eik_derived_key_len <= FP_CRYPTO_SHA256_HASH_LEN);
 
 	memcpy(hash_input, eik, FP_FHN_STATE_EIK_LEN);
 	hash_input[FP_FHN_STATE_EIK_LEN] = seed_end_byte;
