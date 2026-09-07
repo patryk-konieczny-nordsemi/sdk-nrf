@@ -6,7 +6,10 @@
 
 #include "eik_operations.h"
 #include "eik_operations_core.h"
+#include "fp_fhn_lengths.h"
 #include "fp_storage_eik.h"
+
+#include <errno.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(fp_fhn_eik_operations, CONFIG_BT_FAST_PAIR_LOG_LEVEL);
@@ -101,6 +104,10 @@ int eik_derive_key(uint8_t seed_end_byte, uint8_t *eik_derived_key, size_t eik_d
 {
 	uint8_t eik[FP_STORAGE_EIK_LEN];
 	int err;
+
+	if (eik_derived_key_len == 0 || eik_derived_key_len > FP_FHN_EIK_DERIVED_KEY_MAX_LEN) {
+		return -EINVAL;
+	}
 
 	err = fp_storage_eik_get(eik);
 	if (err) {

@@ -414,6 +414,21 @@ config BT_FAST_PAIR_FHN_STATE
 	help
 	  Add Fast Pair FHN State source file.
 
+if TFM_IPC
+
+config BT_FAST_PAIR_FHN_EIK_ITS_ID
+	hex "PSA Internal Trusted Storage UID for the Ephemeral identity key"
+	depends on TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
+	depends on BT_FAST_PAIR_STORAGE_FHN_EIK
+	range 0x1 0xFFFEFFFF
+	default 0x30001
+	help
+	  PSA ITS uid for the 32-byte FHN Ephemeral identity key.
+	  Used only by the SPE EIK secure partition when TF-M IPC and ITS are enabled.
+	  When IPC or ITS is disabled, legacy RRAM/settings storage is used instead.
+
+endif # TFM_IPC
+
 # The FHN extension requires the system workqueue to execute at
 # a cooperative priority.
 config SYSTEM_WORKQUEUE_PRIORITY

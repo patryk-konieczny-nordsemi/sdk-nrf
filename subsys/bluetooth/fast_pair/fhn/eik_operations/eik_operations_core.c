@@ -6,15 +6,13 @@
 
 #include "eik_operations_core.h"
 #include "fp_crypto.h"
-#include "fp_fhn_state.h"
+#include "fp_fhn_lengths.h"
 
 #include <string.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/__assert.h>
 
-#define EIK_HASH_COMPARE_LEN 8U
-#define EIK_RANDOM_NONCE_LEN CONFIG_BT_FAST_PAIR_FHN_RANDOM_NONCE_LEN
-#define SECP_MOD_RES_LEN     FP_FHN_STATE_EID_LEN
+#define SECP_MOD_RES_LEN FP_FHN_STATE_EID_LEN
 
 bool eik_core_hash_compare(const uint8_t *eik, const uint8_t *eik_hash, const uint8_t *random_nonce)
 {
@@ -139,7 +137,7 @@ int eik_core_derive_key(const uint8_t *eik, uint8_t seed_end_byte, uint8_t *eik_
 	uint8_t eik_derived_key_full[FP_CRYPTO_SHA256_HASH_LEN];
 
 	__ASSERT_NO_MSG(eik && eik_derived_key); 
-	__ASSERT_NO_MSG(eik_derived_key_len <= FP_CRYPTO_SHA256_HASH_LEN);
+	__ASSERT_NO_MSG(eik_derived_key_len <= EIK_DERIVED_KEY_MAX_LEN);
 
 	memcpy(hash_input, eik, FP_FHN_STATE_EIK_LEN);
 	hash_input[FP_FHN_STATE_EIK_LEN] = seed_end_byte;

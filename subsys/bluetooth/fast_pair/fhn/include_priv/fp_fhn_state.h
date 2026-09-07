@@ -10,6 +10,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include "fp_fhn_lengths.h"
+
 #include <bluetooth/fast_pair/fhn/fhn.h>
 
 /**
@@ -22,11 +24,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/* Length in bytes of the Ephemeral Identifier (EID). */
-#define FP_FHN_STATE_EID_LEN CONFIG_BT_FAST_PAIR_FHN_ECC_LEN
-/* Length in bytes of the Ephemeral Identity Key (EIK). */
-#define FP_FHN_STATE_EIK_LEN 32
 
 /** Read the currently used Ephemeral Identifier.
  *

@@ -11,6 +11,8 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#include "fp_fhn_lengths.h"
+
 /**
  * @defgroup eik_operations_core Ephemeral Identity Key (EIK) core operations for the FHN extension
  * @brief Internal API of Fast Pair Ephemeral Identity Key (EIK) operations for the FHN extension
@@ -24,6 +26,15 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* Length in bytes of the EIK hash compared in beacon actions (first 8 bytes of SHA-256). */
+#define EIK_HASH_COMPARE_LEN FP_FHN_EIK_HASH_COMPARE_LEN
+
+/* Length in bytes of the random nonce used in EIK hash verification. */
+#define EIK_RANDOM_NONCE_LEN CONFIG_BT_FAST_PAIR_FHN_RANDOM_NONCE_LEN
+
+/* Maximum length in bytes of output from @ref eik_core_derive_key. */
+#define EIK_DERIVED_KEY_MAX_LEN FP_FHN_EIK_DERIVED_KEY_MAX_LEN
 
 /** Verify a received EIK hash against the provided Ephemeral Identity Key (EIK).
  *

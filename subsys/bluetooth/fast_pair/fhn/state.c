@@ -33,6 +33,7 @@ LOG_MODULE_REGISTER(fp_fhn_state, CONFIG_BT_FAST_PAIR_LOG_LEVEL);
 
 #include "dult.h"
 #include "fp_fhn_dult_integration.h"
+#include "fp_fhn_lengths.h"
 
 /* Byte length and offset of fields used to generate the FHN frame. */
 #define FHN_FRAME_UUID_LEN            2
@@ -41,7 +42,7 @@ LOG_MODULE_REGISTER(fp_fhn_state, CONFIG_BT_FAST_PAIR_LOG_LEVEL);
 #define FHN_FRAME_EID_OFFSET          (FHN_FRAME_TYPE_OFFSET + FHN_FRAME_TYPE_LEN)
 #define FHN_FRAME_EID_LEN             FP_FHN_STATE_EID_LEN
 #define FHN_FRAME_HASHED_FLAGS_OFFSET (FHN_FRAME_EID_OFFSET + FHN_FRAME_EID_LEN)
-#define FHN_FRAME_HASHED_FLAGS_LEN    1
+#define FHN_FRAME_HASHED_FLAGS_LEN    FP_FHN_FRAME_HASHED_FLAGS_XOR_LEN
 #define FHN_FRAME_PAYLOAD_LEN \
 	(FHN_FRAME_HASHED_FLAGS_OFFSET + FHN_FRAME_HASHED_FLAGS_LEN)
 
@@ -57,15 +58,6 @@ LOG_MODULE_REGISTER(fp_fhn_state, CONFIG_BT_FAST_PAIR_LOG_LEVEL);
 /* FHN Frame type with Unwanted Tracking Protection Mode indication. */
 #define FHN_FRAME_TYPE_UTP_MODE_OFF 0x40
 #define FHN_FRAME_TYPE_UTP_MODE_ON  0x41
-
-/* Byte length and offset of fields used to generate a seed for Ephemeral Identifier. */
-#define FHN_EID_SEED_PADDING_LEN        11
-#define FHN_EID_SEED_ROT_PERIOD_EXP_LEN 1
-#define FHN_EID_SEED_FHN_CLOCK_LEN     sizeof(uint32_t)
-#define FHN_EID_SEED_LEN                    \
-	((FHN_EID_SEED_PADDING_LEN +        \
-	  FHN_EID_SEED_ROT_PERIOD_EXP_LEN + \
-	  FHN_EID_SEED_FHN_CLOCK_LEN) * 2)
 
 /* Constants used to generate a seed for Ephemeral Identifier. */
 #define FHN_EID_SEED_ROT_PERIOD_EXP   10
@@ -160,7 +152,7 @@ static void eid_seed_half_encode(struct net_buf_simple *buf,
 				 uint8_t padding_pattern,
 				 uint32_t fhn_clock)
 {
-	uint8_t padding[FHN_EID_SEED_PADDING_LEN];
+	uint8_t padding[FP_FHN_EID_SEED_PADDING_LEN];
 
 	memset(padding, padding_pattern, sizeof(padding));
 
@@ -175,7 +167,7 @@ static int eid_encode(void)
 	uint32_t fhn_clock;
 	const uint8_t uninitialized_eid[FP_FHN_STATE_EID_LEN] = {};
 
-	NET_BUF_SIMPLE_DEFINE(eid_seed_buf, FHN_EID_SEED_LEN);
+	NET_BUF_SIMPLE_DEFINE(eid_seed_buf, FP_FHN_EID_SEED_LEN);
 
 	/* Prepare the FHN Clock value. */
 	fhn_clock = fp_fhn_clock_read();
