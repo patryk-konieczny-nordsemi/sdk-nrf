@@ -216,17 +216,27 @@ static int key_gen_public_key(const struct bt_conn *conn,
 	struct fp_procedure *proc = &fp_procedures[bt_conn_index(conn)];
 
 	uint8_t req[FP_CRYPTO_AES128_BLOCK_LEN];
-	uint8_t priv_key[FP_REG_DATA_ANTI_SPOOFING_PRIV_KEY_LEN];
 	uint8_t ecdh_secret[FP_CRYPTO_ECDH_SHARED_KEY_LEN];
 
-	/* Partition provisioning: load plaintext key. KMU path uses key id in ECDH instead. */
-	if (IS_ENABLED(CONFIG_BT_FAST_PAIR_PROVISION_PARTITION)) {
-		err = fp_get_anti_spoofing_priv_key(priv_key, sizeof(priv_key));
-	}
+	if (IS_ENABLED(CONFIG_BT_FAST_PAIR_PROVISION_SECURE_STORAGE) &&
+		IS_ENABLED(CONFIG_BT_FAST_PAIR_CRYPTO_PSA)) {
+		psa_key_id_t key_id;
 
-	if (!err) {
-		err = fp_crypto_ecdh_shared_secret(ecdh_secret, keygen_params->public_key,
-						   priv_key);
+		err = fp_get_anti_spoofing_priv_key_id(&key_id);
+		if (!err) {
+			err = fp_crypto_ecdh_shared_secret(ecdh_secret,
+							   keygen_params->public_key,
+							   &key_id);
+		}
+	} else {
+		uint8_t priv_key[FP_REG_DATA_ANTI_SPOOFING_PRIV_KEY_LEN];
+
+		err = fp_get_anti_spoofing_priv_key(priv_key, sizeof(priv_key));
+		if (!err) {
+			err = fp_crypto_ecdh_shared_secret(ecdh_secret,
+							   keygen_params->public_key,
+							   priv_key);
+		}
 	}
 
 	if (!err) {

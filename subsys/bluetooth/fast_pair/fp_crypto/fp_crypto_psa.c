@@ -249,23 +249,14 @@ static int fp_crypto_psa_ecdh_shared_secret(uint8_t *secret_key, const uint8_t *
 }
 
 int fp_crypto_ecdh_shared_secret(uint8_t *secret_key, const uint8_t *public_key,
-				 const uint8_t *private_key)
+				 const void *private_key)
 {
 	int err = 0;
 	psa_key_id_t priv_key_id;
 	psa_status_t status;
 
 	if (IS_ENABLED(CONFIG_BT_FAST_PAIR_PROVISION_SECURE_STORAGE)) {
-		/* The Anti-Spoofing private key resides in the KMU. It is referenced by its
-		 * key id and never imported in plaintext, so the raw private_key buffer is
-		 * unused in this configuration.
-		 */
-		err = fp_get_anti_spoofing_priv_key_id(&priv_key_id);
-		if (err) {
-			LOG_ERR("Failed to get private Anti-Spoofing Key ID (err: %d)", err);
-			return err;
-		}
-
+		priv_key_id = *((psa_key_id_t *)private_key);
 	} else {
 		priv_key_id = import_ecdh_priv_key(private_key);
 	}
