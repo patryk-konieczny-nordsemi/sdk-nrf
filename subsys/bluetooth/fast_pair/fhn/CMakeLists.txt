@@ -58,4 +58,7 @@ target_link_libraries(fhn PRIVATE fp_crypto)
 target_link_libraries(fhn PRIVATE fp_storage)
 
 add_subdirectory(pf)
-add_subdirectory(eik_operations)
+
+if(CONFIG_BT_FAST_PAIR_FHN_STATE)
+  add_subdirectory(eik_operations)
+endif()

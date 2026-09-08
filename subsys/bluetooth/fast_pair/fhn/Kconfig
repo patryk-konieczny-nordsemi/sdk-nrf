@@ -418,6 +418,7 @@ if TFM_IPC
 
 config BT_FAST_PAIR_FHN_EIK_ITS_ID
 	hex "PSA Internal Trusted Storage UID for the Ephemeral identity key"
+	depends on BT_FAST_PAIR_FHN
 	depends on TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
 	depends on BT_FAST_PAIR_STORAGE_FHN_EIK
 	range 0x1 0xFFFEFFFF

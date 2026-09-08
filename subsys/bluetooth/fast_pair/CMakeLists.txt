@@ -48,27 +48,6 @@ if(CONFIG_BT_FAST_PAIR_FHN OR CONFIG_BT_FAST_PAIR_FMDN)
   target_link_libraries(fast_pair PRIVATE fhn)
 endif()
 
-# Emit a single combined -D per TF-M extra-partition option. TF-M treats
-# TFM_EXTRA_MANIFEST_LIST_FILES/TFM_EXTRA_PARTITION_PATHS as lists, but repeated
-# -D tokens on the command line override each other. The entries are joined with an
-# escaped separator (\;) so the value survives the COMMAND_EXPAND_LISTS expansion of
-# TFM_CMAKE_OPTIONS as a single argument and is parsed as a list by the TF-M CMake run.
-if(CONFIG_BUILD_WITH_TFM)
-  get_property(nrf_tfm_manifest_lists GLOBAL PROPERTY NRF_TFM_EXTRA_MANIFEST_LIST_FILES)
-  get_property(nrf_tfm_partition_paths GLOBAL PROPERTY NRF_TFM_EXTRA_PARTITION_PATHS)
-
-  if(nrf_tfm_manifest_lists)
-    list(JOIN nrf_tfm_manifest_lists "\\;" nrf_tfm_manifest_lists_arg)
-    list(JOIN nrf_tfm_partition_paths "\\;" nrf_tfm_partition_paths_arg)
-
-    set_property(TARGET zephyr_property_target
-      APPEND PROPERTY TFM_CMAKE_OPTIONS
-      -DTFM_EXTRA_MANIFEST_LIST_FILES=${nrf_tfm_manifest_lists_arg}
-      -DTFM_EXTRA_PARTITION_PATHS=${nrf_tfm_partition_paths_arg}
-    )
-  endif()
-endif()
-
 if(CONFIG_BT_FAST_PAIR_FMDN)
   zephyr_library_compile_options(
     -include ${CMAKE_CURRENT_SOURCE_DIR}/fhn/include_priv/fp_fhn_kconfig_compat.h)

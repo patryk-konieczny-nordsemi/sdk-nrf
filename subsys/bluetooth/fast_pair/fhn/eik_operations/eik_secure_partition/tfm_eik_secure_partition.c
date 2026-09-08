@@ -4,16 +4,11 @@
  * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
  */
 
-#include <stdint.h>
-#include <string.h>
-
 #include <psa/internal_trusted_storage.h>
+#include <psa/service.h>
 #include <mbedtls/platform_util.h>
-#include "psa/service.h"
-#include "psa_manifest/tfm_eik_secure_partition.h"
 
 #include "eik_operations_core.h"
-#include "fp_fhn_lengths.h"
 #include "eik_secure_ipc.h"
 
 #include "tfm_log_unpriv.h"
