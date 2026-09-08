@@ -18,9 +18,9 @@
 
 #include <zephyr/sys/byteorder.h>
 
-/* Logging commented out so this backend can also compile inside the EIK secure partition. */
-/* #include <zephyr/logging/log.h> */
-/* LOG_MODULE_DECLARE(fp_crypto, CONFIG_FP_CRYPTO_LOG_LEVEL); */
+#include <zephyr/logging/log.h>
+/* LOG_MODULE_DECLARE is a no-op in SPE (tfm_boards zephyr/logging/log.h stub). */
+LOG_MODULE_DECLARE(fp_crypto, CONFIG_FP_CRYPTO_LOG_LEVEL);
 
 #define SECP160R1_DATA_LEN (32U)
 #define SECP256R1_DATA_LEN (32U)
@@ -90,8 +90,8 @@ int fp_crypto_ecdh_shared_secret(uint8_t *secret_key,
 
 	ret = ocrypto_ecdh_p256_common_secret(secret_key, (uint8_t *)private_key, public_key);
 	if (ret) {
-		/* LOG_ERR("ecdh: ocrypto_ecdh_p256_common_secret failed:" */
-		/*	" invalid private or public key"); */
+		LOG_ERR("ecdh: ocrypto_ecdh_p256_common_secret failed:"
+			" invalid private or public key");
 		return ret;
 	}
 

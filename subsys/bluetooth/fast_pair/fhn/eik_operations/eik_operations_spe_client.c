@@ -112,9 +112,6 @@ int eik_eid_encode(const uint8_t *eid_seed_buf_data, uint8_t *fhn_eid,
 		.op = EIK_SECURE_OP_EID_ENCODE,
 	};
 
-	/* This operation uses the maximum of PSA_MAX_IOVEC (4) IO vectors, so the core
-	 * result is conveyed through the psa_call() status rather than a separate outvec.
-	 */
 	psa_invec in_vec[] = {
 		{ &req, sizeof(req) },
 		{ eid_seed_buf_data, FP_FHN_EID_SEED_LEN },

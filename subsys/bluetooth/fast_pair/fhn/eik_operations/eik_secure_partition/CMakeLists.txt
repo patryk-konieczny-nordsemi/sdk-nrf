@@ -9,13 +9,21 @@ add_library(tfm_app_rot_partition_eik STATIC)
 set(EIK_OPERATIONS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/..)
 set(FP_CRYPTO_DIR ${ZEPHYR_NRF_MODULE_DIR}/subsys/bluetooth/fast_pair/fp_crypto)
 
+if(CONFIG_BT_FAST_PAIR_CRYPTO_OBERON)
+    set(EIK_SPE_FP_CRYPTO_SRC ${FP_CRYPTO_DIR}/fp_crypto_oberon.c)
+elseif(CONFIG_BT_FAST_PAIR_CRYPTO_PSA)
+    set(EIK_SPE_FP_CRYPTO_SRC ${FP_CRYPTO_DIR}/fp_crypto_psa.c)
+else()
+    message(FATAL_ERROR
+        "EIK secure partition requires CONFIG_BT_FAST_PAIR_CRYPTO_OBERON or CONFIG_BT_FAST_PAIR_CRYPTO_PSA")
+endif()
+
 target_sources(tfm_app_rot_partition_eik
     PRIVATE
         tfm_eik_secure_partition.c
         ${EIK_OPERATIONS_DIR}/eik_operations_core.c
         ${CMAKE_BINARY_DIR}/eik_secure_partition/auto_generated/intermedia_tfm_eik_secure_partition.c
-
-        ${FP_CRYPTO_DIR}/fp_crypto_oberon.c
+        ${EIK_SPE_FP_CRYPTO_SRC}
 )
 
 target_include_directories(tfm_app_rot_partition_eik

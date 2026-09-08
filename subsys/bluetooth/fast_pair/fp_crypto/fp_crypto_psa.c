@@ -9,30 +9,28 @@
 #include <zephyr/init.h>
 #include <psa/crypto.h>
 #include <zephyr/kernel.h>
-/* Logging commented out so this backend can also compile inside the EIK secure partition. */
-/* #include <zephyr/logging/log.h> */
-/* LOG_MODULE_DECLARE(fp_crypto, CONFIG_FP_CRYPTO_LOG_LEVEL); */
+
+#include <ocrypto_secp160r1.h>
+#include <ocrypto_curve_p256.h>
+#include <ocrypto_sc_p256.h>
 
 #include "fp_crypto.h"
 #include "fp_registration_data.h"
 
-#include <ocrypto_secp160r1.h>
-#include <ocrypto_aes_ecb.h>
-#include <ocrypto_curve_p256.h>
-#include <ocrypto_sc_p256.h>
+#include <zephyr/logging/log.h>
+/* LOG_MODULE_DECLARE is a no-op in SPE (tfm_boards zephyr/logging/log.h stub). */
+LOG_MODULE_DECLARE(fp_crypto, CONFIG_FP_CRYPTO_LOG_LEVEL);
+
 
 #define SECP160R1_DATA_LEN (32U)
 #define SECP256R1_DATA_LEN (32U)
 
-/* START: importing additional APIs from the Oberon runtime. */
 typedef struct {
 	uint32_t w[6];
 } ocrypto_sc_p160;
 
 void ocrypto_sc_p160_from32bytes_alt(ocrypto_sc_p160 *r, const uint8_t x[32]);
-/* END: importing additional APIs from the Oberon runtime. */
 
-/* Little-endian to big-endian byte swap, dependency-free. */
 static void fp_crypto_memcpy_swap(void *dst, const void *src, size_t len)
 {
 	const uint8_t *s = src;
@@ -50,12 +48,12 @@ int fp_crypto_sha256(uint8_t *out, const uint8_t *in, size_t data_len)
 					       out, FP_CRYPTO_SHA256_HASH_LEN, &hash_len);
 
 	if (status != PSA_SUCCESS) {
-		/* LOG_ERR("psa_hash_compute failed (err: %d)", status); */
+		LOG_ERR("psa_hash_compute failed (err: %d)", status);
 		return -EIO;
 	}
 
 	if (hash_len != FP_CRYPTO_SHA256_HASH_LEN) {
-		/* LOG_ERR("Invalid psa_hash_compute output len: %zu", hash_len); */
+		LOG_ERR("Invalid psa_hash_compute output len: %zu", hash_len);
 		return -EIO;
 	}
 
@@ -78,7 +76,7 @@ static psa_key_id_t import_hmac_sha256_key(const uint8_t *data, size_t len)
 	psa_reset_key_attributes(&key_attr);
 
 	if (status != PSA_SUCCESS) {
-		/* LOG_ERR("psa_import_key failed (err: %d)", status); */
+		LOG_ERR("psa_import_key failed (err: %d)", status);
 		key_id = PSA_KEY_ID_NULL;
 	}
 
@@ -93,12 +91,12 @@ static int fp_crypto_psa_hmac_sha256(uint8_t *out, const uint8_t *in, size_t dat
 					      out, FP_CRYPTO_SHA256_HASH_LEN, &olen);
 
 	if (status != PSA_SUCCESS) {
-		/* LOG_ERR("psa_mac_compute failed (err: %d)", status); */
+		LOG_ERR("psa_mac_compute failed (err: %d)", status);
 		return -EIO;
 	}
 
 	if (olen != FP_CRYPTO_SHA256_HASH_LEN) {
-		/* LOG_ERR("Invalid psa_mac_compute output length: %zu", olen); */
+		LOG_ERR("Invalid psa_mac_compute output length: %zu", olen);
 		return -EIO;
 	}
 
@@ -114,7 +112,7 @@ int fp_crypto_hmac_sha256(uint8_t *out, const uint8_t *in, size_t data_len, cons
 
 	hmac_key_id = import_hmac_sha256_key(hmac_key, hmac_key_len);
 	if (hmac_key_id == PSA_KEY_ID_NULL) {
-		/* LOG_ERR("import_hmac_sha256_key failed"); */
+		LOG_ERR("import_hmac_sha256_key failed");
 		return -EIO;
 	}
 
@@ -122,7 +120,7 @@ int fp_crypto_hmac_sha256(uint8_t *out, const uint8_t *in, size_t data_len, cons
 
 	status = psa_destroy_key(hmac_key_id);
 	if (status != PSA_SUCCESS) {
-		/* LOG_ERR("psa_destroy_key failed (err: %d)", status); */
+		LOG_ERR("psa_destroy_key failed (err: %d)", status);
 		/* Overwrite error code to forward information about psa_destroy_key failure. */
 		err = -ECANCELED;
 	}
@@ -148,7 +146,7 @@ static psa_key_id_t import_aes128_key(const uint8_t *data)
 	psa_reset_key_attributes(&key_attr);
 
 	if (status != PSA_SUCCESS) {
-		/* LOG_ERR("psa_import_key failed (err: %d)", status); */
+		LOG_ERR("psa_import_key failed (err: %d)", status);
 		key_id = PSA_KEY_ID_NULL;
 	}
 
@@ -172,13 +170,13 @@ static int fp_crypto_psa_aes128_ecb_crypt(uint8_t *out, const uint8_t *in, psa_k
 	}
 
 	if (status != PSA_SUCCESS) {
-		/* LOG_ERR("psa_cipher_%scrypt failed (err: %d)", encrypt ? "en" : "de", status); */
+		LOG_ERR("psa_cipher_%scrypt failed (err: %d)", encrypt ? "en" : "de", status);
 		return -EIO;
 	}
 
 	if (olen != FP_CRYPTO_AES128_BLOCK_LEN) {
-		/* LOG_ERR("Invalid psa_cipher_%scrypt output length: %zu", */
-		/*	encrypt ? "en" : "de", olen); */
+		LOG_ERR("Invalid psa_cipher_%scrypt output length: %zu",
+			encrypt ? "en" : "de", olen);
 		return -EIO;
 	}
 
@@ -194,7 +192,7 @@ static int fp_crypto_aes128_ecb_crypt(uint8_t *out, const uint8_t *in, const uin
 
 	key_id = import_aes128_key(k);
 	if (key_id == PSA_KEY_ID_NULL) {
-		/* LOG_ERR("import_aes128_key failed"); */
+		LOG_ERR("import_aes128_key failed");
 		return -EIO;
 	}
 
@@ -202,7 +200,7 @@ static int fp_crypto_aes128_ecb_crypt(uint8_t *out, const uint8_t *in, const uin
 
 	status = psa_destroy_key(key_id);
 	if (status != PSA_SUCCESS) {
-		/* LOG_ERR("psa_destroy_key failed (err: %d)", status); */
+		LOG_ERR("psa_destroy_key failed (err: %d)", status);
 		/* Overwrite error code to forward information about psa_destroy_key failure. */
 		err = -ECANCELED;
 	}
@@ -239,7 +237,7 @@ static psa_key_id_t import_ecdh_priv_key(const uint8_t *data)
 	psa_reset_key_attributes(&key_attr);
 
 	if (status != PSA_SUCCESS) {
-		/* LOG_ERR("psa_import_key failed (err: %d)", status); */
+		LOG_ERR("psa_import_key failed (err: %d)", status);
 		key_id = PSA_KEY_ID_NULL;
 	}
 
@@ -265,12 +263,12 @@ static int fp_crypto_psa_ecdh_shared_secret(uint8_t *secret_key, const uint8_t *
 				       public_key_uncompressed, sizeof(public_key_uncompressed),
 				       secret_key, FP_CRYPTO_ECDH_SHARED_KEY_LEN, &olen);
 	if (status != PSA_SUCCESS) {
-		/* LOG_ERR("psa_raw_key_agreement failed (err: %d)", status); */
+		LOG_ERR("psa_raw_key_agreement failed (err: %d)", status);
 		return -EIO;
 	}
 
 	if (olen != FP_CRYPTO_ECDH_SHARED_KEY_LEN) {
-		/* LOG_ERR("Invalid psa_raw_key_agreement output len: %zu", olen); */
+		LOG_ERR("Invalid psa_raw_key_agreement output len: %zu", olen);
 		return -EIO;
 	}
 
@@ -291,7 +289,7 @@ int fp_crypto_ecdh_shared_secret(uint8_t *secret_key, const uint8_t *public_key,
 	}
 
 	if (priv_key_id == PSA_KEY_ID_NULL) {
-		/* LOG_ERR("ECDH private key setup failed"); */
+		LOG_ERR("ECDH private key setup failed");
 		return -EIO;
 	}
 
@@ -306,10 +304,10 @@ int fp_crypto_ecdh_shared_secret(uint8_t *secret_key, const uint8_t *public_key,
 
 	/* Overwrite error code to forward information about psa destroy/purge key failure. */
 	if (status != PSA_SUCCESS) {
-		/* LOG_ERR("%s failed (err: %d)", */
-		/*	IS_ENABLED(CONFIG_BT_FAST_PAIR_PROVISION_SECURE_STORAGE) ? "psa_purge_key" : */
-		/*						    "psa_destroy_key", */
-		/*	status); */
+		LOG_ERR("%s failed (err: %d)",
+			IS_ENABLED(CONFIG_BT_FAST_PAIR_PROVISION_SECURE_STORAGE) ? "psa_purge_key" :
+								    "psa_destroy_key",
+			status);
 		err = -ECANCELED;
 	}
 
@@ -367,7 +365,8 @@ int fp_crypto_aes256_ecb_decrypt(uint8_t *out, const uint8_t *in, const uint8_t 
 	return fp_crypto_aes256_ecb_crypt(out, in, k, false);
 }
 
-int fp_crypto_ecc_secp160r1_calculate(uint8_t *out, uint8_t *mod, const uint8_t *in, size_t datalen)
+int fp_crypto_ecc_secp160r1_calculate(uint8_t *out, uint8_t *mod, 
+	const uint8_t *in, size_t datalen)
 {
 	uint8_t public_key[FP_CRYPTO_ECC_SECP160R1_KEY_LEN * 2U];
 	ocrypto_sc_p160 mod_le;
@@ -375,6 +374,9 @@ int fp_crypto_ecc_secp160r1_calculate(uint8_t *out, uint8_t *mod, const uint8_t 
 	if (datalen != SECP160R1_DATA_LEN) {
 		return -ENOTSUP;
 	}
+
+	if (!IS_ENABLED(FP_CRYPTO_SPE))
+		LOG_WRN("Using non-secure oberon secp160r1 function - No PSA alternative");
 
 	ocrypto_sc_p160_from32bytes_alt(&mod_le, in);
 	fp_crypto_memcpy_swap(mod, mod_le.w, FP_CRYPTO_ECC_SECP160R1_MOD_LEN);
@@ -385,7 +387,8 @@ int fp_crypto_ecc_secp160r1_calculate(uint8_t *out, uint8_t *mod, const uint8_t 
 	return 0;
 }
 
-int fp_crypto_ecc_secp256r1_calculate(uint8_t *out, uint8_t *mod, const uint8_t *in, size_t datalen)
+int fp_crypto_ecc_secp256r1_calculate(uint8_t *out, uint8_t *mod, 
+	const uint8_t *in, size_t datalen)
 {
 	ocrypto_cp_p256 public_key;
 	ocrypto_sc_p256 mod_le;
@@ -393,6 +396,9 @@ int fp_crypto_ecc_secp256r1_calculate(uint8_t *out, uint8_t *mod, const uint8_t 
 	if (datalen != SECP256R1_DATA_LEN) {
 		return -ENOTSUP;
 	}
+
+	if (!IS_ENABLED(FP_CRYPTO_SPE))
+		LOG_WRN("Using non-secure oberon secp256r1 function - No PSA alternative");
 
 	(void)ocrypto_sc_p256_from32bytes(&mod_le, in);
 	fp_crypto_memcpy_swap(mod, mod_le.w, FP_CRYPTO_ECC_SECP256R1_MOD_LEN);
@@ -403,12 +409,13 @@ int fp_crypto_ecc_secp256r1_calculate(uint8_t *out, uint8_t *mod, const uint8_t 
 	return 0;
 }
 
+#ifndef FP_CRYPTO_SPE
 static int fp_crypto_psa_init(void)
 {
 	psa_status_t status = psa_crypto_init();
 
 	if (status != PSA_SUCCESS) {
-		/* LOG_ERR("psa_crypto_init failed (err: %d)", status); */
+		LOG_ERR("psa_crypto_init failed (err: %d)", status);
 		k_panic();
 		return -EIO;
 	}
@@ -417,3 +424,4 @@ static int fp_crypto_psa_init(void)
 }
 
 SYS_INIT(fp_crypto_psa_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+#endif

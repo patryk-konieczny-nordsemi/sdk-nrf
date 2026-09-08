@@ -11,7 +11,7 @@
 #include "eik_operations_core.h"
 #include "eik_secure_ipc.h"
 
-#include "tfm_log_unpriv.h"
+#include <zephyr/logging/log.h>
 
 #define EIK_ITS_UID ((psa_storage_uid_t)CONFIG_BT_FAST_PAIR_FHN_EIK_ITS_ID)
 
@@ -259,31 +259,31 @@ static psa_status_t tfm_eik_secure_dispatch(const struct eik_secure_req *req, co
 {
 	switch (req->op) {
 	case EIK_SECURE_OP_DELETE:
-		INFO_UNPRIV("[EIK SECURE] Delete\n\r");
+		LOG_DBG("[EIK SECURE] Delete");
 		return tfm_eik_delete(msg);
 
 	case EIK_SECURE_OP_IS_PROVISIONED:
-		INFO_UNPRIV("[EIK SECURE] Is provisioned\n\r");
+		LOG_DBG("[EIK SECURE] Is provisioned");
 		return tfm_eik_is_provisioned(msg);
 
 	case EIK_SECURE_OP_HASH_COMPARE:
-		INFO_UNPRIV("[EIK SECURE] Hash compare\n\r");
+		LOG_DBG("[EIK SECURE] Hash compare");
 		return tfm_eik_hash_compare(msg);
 
 	case EIK_SECURE_OP_EID_ENCODE:
-		INFO_UNPRIV("[EIK SECURE] EID encode\n\r");
+		LOG_DBG("[EIK SECURE] EID encode");
 		return tfm_eik_eid_encode(msg);
 
 	case EIK_SECURE_OP_PROVISION_ENCRYPTED:
-		INFO_UNPRIV("[EIK SECURE] Provision encrypted\n\r");
+		LOG_DBG("[EIK SECURE] Provision encrypted");
 		return tfm_eik_provision_encrypted(msg);
 
 	case EIK_SECURE_OP_GET_ENCRYPTED:
-		INFO_UNPRIV("[EIK SECURE] Get encrypted\n\r");
+		LOG_DBG("[EIK SECURE] Get encrypted");
 		return tfm_eik_get_encrypted(msg);
 
 	case EIK_SECURE_OP_DERIVE_KEY:
-		INFO_UNPRIV("[EIK SECURE] Derive Key\n\r");
+		LOG_DBG("[EIK SECURE] Derive Key");
 		return tfm_eik_derive_key(msg);
 
 	default:

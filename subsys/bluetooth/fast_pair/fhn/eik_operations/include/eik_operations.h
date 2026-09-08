@@ -21,8 +21,8 @@
  * The plaintext key is never returned to the caller; each operation loads or uses
  * the provisioned EIK internally.
  *
- * When @kconfig{CONFIG_TFM_IPC} is enabled, calls are forwarded over PSA IPC to the
- * EIK secure partition in SPE. Otherwise, the legacy path uses device settings or
+ * When CONFIG_TFM_IPC is enabled, calls are forwarded over PSA IPC to the
+ * EIK secure partition in SPE. Otherwise, the legacy path uses device settings in
  * RRAM storage together with @ref eik_operations_core in NS.
  *
  * @{
