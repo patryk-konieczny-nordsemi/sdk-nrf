@@ -43,10 +43,16 @@ if(CONFIG_TFM_IPC AND CONFIG_BUILD_WITH_TFM AND
     ${CMAKE_CURRENT_BINARY_DIR}/eik_secure_partition/tfm_manifest_list.yaml
   )
 
+  # Register this partition into the shared TF-M extra-partition lists. A single
+  # combined -D per option is emitted later (see fast_pair/CMakeLists.txt) so that
+  # multiple Nordic partitions do not override each other on the TF-M command line.
+  set_property(GLOBAL APPEND PROPERTY NRF_TFM_EXTRA_MANIFEST_LIST_FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/eik_secure_partition/tfm_manifest_list.yaml)
+  set_property(GLOBAL APPEND PROPERTY NRF_TFM_EXTRA_PARTITION_PATHS
+    ${EIK_SECURE_PARTITION_DIR})
+
   set_property(TARGET zephyr_property_target
     APPEND PROPERTY TFM_CMAKE_OPTIONS
-    -DTFM_EXTRA_MANIFEST_LIST_FILES=${CMAKE_CURRENT_BINARY_DIR}/eik_secure_partition/tfm_manifest_list.yaml
-    -DTFM_EXTRA_PARTITION_PATHS=${EIK_SECURE_PARTITION_DIR}
     -DZEPHYR_NRFXLIB_MODULE_DIR=${ZEPHYR_NRFXLIB_MODULE_DIR}
     -DZEPHYR_BASE=${ZEPHYR_BASE}
     -DZEPHYR_AUTOCONF=${AUTOCONF_H}

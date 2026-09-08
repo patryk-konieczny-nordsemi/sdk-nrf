@@ -40,25 +40,15 @@ static psa_status_t tfm_eik_read_from_its(uint8_t *eik, size_t eik_len)
 static psa_status_t tfm_eik_delete(const psa_msg_t *msg)
 {
 	psa_status_t status;
-	int result;
 
-	if (msg->out_size[0] != sizeof(result)) {
-		return PSA_ERROR_PROGRAMMER_ERROR;
-	}
+	(void)msg;
 
 	status = psa_its_remove(EIK_ITS_UID);
-	switch (status) {
-	case PSA_SUCCESS:
-	case PSA_ERROR_DOES_NOT_EXIST:
-		result = 0;
-		status = PSA_SUCCESS;
-		break;
-	default:
-		return status;
+	if (status == PSA_ERROR_DOES_NOT_EXIST) {
+		return PSA_SUCCESS;
 	}
 
-	psa_write(msg->handle, 0, &result, sizeof(result));
-	return PSA_SUCCESS;
+	return status;
 }
 
 static psa_status_t tfm_eik_is_provisioned(const psa_msg_t *msg)
@@ -132,9 +122,8 @@ static psa_status_t tfm_eik_eid_encode(const psa_msg_t *msg)
 	int result;
 
 	if (msg->in_size[1] != sizeof(eid_seed_buf_data) ||
-	    msg->out_size[0] != sizeof(result) ||
-	    msg->out_size[1] != sizeof(fhn_eid) ||
-	    msg->out_size[2] != sizeof(fhn_frame_hashed_flags_xor_operand)) {
+	    msg->out_size[0] != sizeof(fhn_eid) ||
+	    msg->out_size[1] != sizeof(fhn_frame_hashed_flags_xor_operand)) {
 		return PSA_ERROR_PROGRAMMER_ERROR;
 	}
 
@@ -155,9 +144,8 @@ static psa_status_t tfm_eik_eid_encode(const psa_msg_t *msg)
 		return PSA_ERROR_GENERIC_ERROR;
 	}
 
-	psa_write(msg->handle, 0, &result, sizeof(result));
-	psa_write(msg->handle, 1, fhn_eid, sizeof(fhn_eid));
-	psa_write(msg->handle, 2, &fhn_frame_hashed_flags_xor_operand,
+	psa_write(msg->handle, 0, fhn_eid, sizeof(fhn_eid));
+	psa_write(msg->handle, 1, &fhn_frame_hashed_flags_xor_operand,
 		  sizeof(fhn_frame_hashed_flags_xor_operand));
 
 	return PSA_SUCCESS;
@@ -172,8 +160,7 @@ static psa_status_t tfm_eik_provision_encrypted(const psa_msg_t *msg)
 	int result;
 
 	if (msg->in_size[1] != sizeof(encrypted_eik) ||
-	    msg->in_size[2] != sizeof(account_key) ||
-	    msg->out_size[0] != sizeof(result)) {
+	    msg->in_size[2] != sizeof(account_key)) {
 		return PSA_ERROR_PROGRAMMER_ERROR;
 	}
 
@@ -195,14 +182,8 @@ static psa_status_t tfm_eik_provision_encrypted(const psa_msg_t *msg)
 
 	status = psa_its_set(EIK_ITS_UID, sizeof(eik), eik, PSA_STORAGE_FLAG_NONE);
 	mbedtls_platform_zeroize(eik, sizeof(eik));
-	if (status != PSA_SUCCESS) {
-		return status;
-	}
 
-	result = 0;
-	psa_write(msg->handle, 0, &result, sizeof(result));
-
-	return PSA_SUCCESS;
+	return status;
 }
 
 static psa_status_t tfm_eik_get_encrypted(const psa_msg_t *msg)
@@ -214,8 +195,7 @@ static psa_status_t tfm_eik_get_encrypted(const psa_msg_t *msg)
 	int result;
 
 	if (msg->in_size[1] != sizeof(owner_account_key) ||
-	    msg->out_size[0] != sizeof(result) ||
-	    msg->out_size[1] != sizeof(encrypted_eik)) {
+	    msg->out_size[0] != sizeof(encrypted_eik)) {
 		return PSA_ERROR_PROGRAMMER_ERROR;
 	}
 
@@ -235,8 +215,7 @@ static psa_status_t tfm_eik_get_encrypted(const psa_msg_t *msg)
 		return PSA_ERROR_GENERIC_ERROR;
 	}
 
-	psa_write(msg->handle, 0, &result, sizeof(result));
-	psa_write(msg->handle, 1, encrypted_eik, sizeof(encrypted_eik));
+	psa_write(msg->handle, 0, encrypted_eik, sizeof(encrypted_eik));
 
 	return PSA_SUCCESS;
 }
@@ -251,13 +230,12 @@ static psa_status_t tfm_eik_derive_key(const psa_msg_t *msg)
 	int result;
 
 	if (msg->in_size[1] != sizeof(seed_end_byte) ||
-	    msg->out_size[0] != sizeof(result) ||
-	    msg->out_size[1] == 0 ||
-	    msg->out_size[1] > sizeof(eik_derived_key)) {
+	    msg->out_size[0] == 0 ||
+	    msg->out_size[0] > sizeof(eik_derived_key)) {
 		return PSA_ERROR_PROGRAMMER_ERROR;
 	}
 
-	derive_len = msg->out_size[1];
+	derive_len = msg->out_size[0];
 
 	if (psa_read(msg->handle, 1, &seed_end_byte, sizeof(seed_end_byte)) !=
 	    sizeof(seed_end_byte)) {
@@ -272,11 +250,12 @@ static psa_status_t tfm_eik_derive_key(const psa_msg_t *msg)
 	result = eik_core_derive_key(eik, seed_end_byte, eik_derived_key, derive_len);
 	mbedtls_platform_zeroize(eik, sizeof(eik));
 	if (result != 0) {
+		mbedtls_platform_zeroize(eik_derived_key, sizeof(eik_derived_key));
 		return PSA_ERROR_GENERIC_ERROR;
 	}
 
-	psa_write(msg->handle, 0, &result, sizeof(result));
-	psa_write(msg->handle, 1, eik_derived_key, derive_len);
+	psa_write(msg->handle, 0, eik_derived_key, derive_len);
+	mbedtls_platform_zeroize(eik_derived_key, sizeof(eik_derived_key));
 
 	return PSA_SUCCESS;
 }

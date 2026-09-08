@@ -57,6 +57,14 @@ target_compile_options(tfm_app_rot_partition_eik PRIVATE
     "SHELL: -imacros ${ZEPHYR_AUTOCONF}"
 )
 
+# Zephyr __ASSERT() resolves to assert_print()/assert_post_action(), which are
+# provided by the Zephyr OS library in the non-secure image but are not linked
+# inside a TF-M secure partition. Disable Zephyr assertions for the shared
+# sources here; the non-secure build keeps them enabled.
+target_compile_definitions(tfm_app_rot_partition_eik PRIVATE
+    __ASSERT_ON=0
+)
+
 target_link_libraries(tfm_app_rot_partition_eik
     PRIVATE
         platform_s

@@ -9,7 +9,7 @@
 #include <zephyr/sys/util.h>
 
 #include "psa/client.h"
-#include "psa_manifest/tfm_eik_secure_partition.h"
+#include "psa_manifest/sid.h"
 
 #include "eik_operations.h"
 #include "eik_operations_core.h"
@@ -21,7 +21,6 @@ LOG_MODULE_REGISTER(fp_fhn_eik_operations, CONFIG_BT_FAST_PAIR_LOG_LEVEL);
 
 int eik_delete(void)
 {
-	int result = -EIO;
 	psa_status_t status;
 
 	struct eik_secure_req req = {
@@ -32,20 +31,16 @@ int eik_delete(void)
 		{ &req, sizeof(req) },
 	};
 
-	psa_outvec out_vec[] = {
-		{ &result, sizeof(result) },
-	};
-
 	status = psa_call(TFM_EIK_SECURE_HANDLE, PSA_IPC_CALL,
 			  in_vec, ARRAY_SIZE(in_vec),
-			  out_vec, ARRAY_SIZE(out_vec));
+			  NULL, 0);
 
 	if (status != PSA_SUCCESS) {
 		LOG_ERR("EIK operations: delete failed [ERR: %d]", status);
 		return -EIO;
 	}
 
-	return result;
+	return 0;
 }
 
 int eik_is_provisioned(void)
@@ -111,20 +106,21 @@ bool eik_hash_compare(const uint8_t *eik_hash, const uint8_t *random_nonce)
 int eik_eid_encode(const uint8_t *eid_seed_buf_data, uint8_t *fhn_eid,
 		   uint8_t *fhn_frame_hashed_flags_xor_operand)
 {
-	int result = -EIO;
 	psa_status_t status;
 
 	struct eik_secure_req req = {
 		.op = EIK_SECURE_OP_EID_ENCODE,
 	};
 
+	/* This operation uses the maximum of PSA_MAX_IOVEC (4) IO vectors, so the core
+	 * result is conveyed through the psa_call() status rather than a separate outvec.
+	 */
 	psa_invec in_vec[] = {
 		{ &req, sizeof(req) },
 		{ eid_seed_buf_data, FP_FHN_EID_SEED_LEN },
 	};
 
 	psa_outvec out_vec[] = {
-		{ &result, sizeof(result) },
 		{ fhn_eid, FP_FHN_STATE_EID_LEN },
 		{ fhn_frame_hashed_flags_xor_operand, FP_FHN_FRAME_HASHED_FLAGS_XOR_LEN },
 	};
@@ -138,12 +134,11 @@ int eik_eid_encode(const uint8_t *eid_seed_buf_data, uint8_t *fhn_eid,
 		return -EIO;
 	}
 
-	return result;
+	return 0;
 }
 
 int eik_provision_encrypted(const uint8_t *encrypted_eik, const uint8_t *account_key)
 {
-	int result = -EIO;
 	psa_status_t status;
 
 	struct eik_secure_req req = {
@@ -156,25 +151,20 @@ int eik_provision_encrypted(const uint8_t *encrypted_eik, const uint8_t *account
 		{ account_key, FP_FHN_ACCOUNT_KEY_LEN },
 	};
 
-	psa_outvec out_vec[] = {
-		{ &result, sizeof(result) },
-	};
-
 	status = psa_call(TFM_EIK_SECURE_HANDLE, PSA_IPC_CALL,
 			  in_vec, ARRAY_SIZE(in_vec),
-			  out_vec, ARRAY_SIZE(out_vec));
+			  NULL, 0);
 
 	if (status != PSA_SUCCESS) {
 		LOG_ERR("EIK operations: EIK decryption and provisioning failed [ERR: %d]", status);
 		return -EIO;
 	}
 
-	return result;
+	return 0;
 }
 
 int eik_get_encrypted(const uint8_t *owner_account_key, uint8_t *encrypted_eik)
 {
-	int result = -EIO;
 	psa_status_t status;
 
 	struct eik_secure_req req = {
@@ -187,7 +177,6 @@ int eik_get_encrypted(const uint8_t *owner_account_key, uint8_t *encrypted_eik)
 	};
 
 	psa_outvec out_vec[] = {
-		{ &result, sizeof(result) },
 		{ encrypted_eik, FP_FHN_ENCRYPTED_EIK_LEN },
 	};
 
@@ -200,12 +189,11 @@ int eik_get_encrypted(const uint8_t *owner_account_key, uint8_t *encrypted_eik)
 		return -EIO;
 	}
 
-	return result;
+	return 0;
 }
 
 int eik_derive_key(uint8_t seed_end_byte, uint8_t *eik_derived_key, size_t eik_derived_key_len)
 {
-	int result = -EIO;
 	psa_status_t status;
 
 	struct eik_secure_req req = {
@@ -222,7 +210,6 @@ int eik_derive_key(uint8_t seed_end_byte, uint8_t *eik_derived_key, size_t eik_d
 	};
 
 	psa_outvec out_vec[] = {
-		{ &result, sizeof(result) },
 		{ eik_derived_key, eik_derived_key_len },
 	};
 
@@ -235,5 +222,5 @@ int eik_derive_key(uint8_t seed_end_byte, uint8_t *eik_derived_key, size_t eik_d
 		return -EIO;
 	}
 
-	return result;
+	return 0;
 }
