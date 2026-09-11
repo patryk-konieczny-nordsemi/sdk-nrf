@@ -82,7 +82,7 @@ static int provision_its_entries_run(void)
 					    &payload_len);
 		if (err != 0) {
 			LOG_ERR("Entry %s: invalid payload (err %d)", entry->name, err);
-			mbedtls_platform_zeroize(payload, payload_len);
+			mbedtls_platform_zeroize(payload, sizeof(payload));
 			return err;
 		}
 
@@ -90,14 +90,14 @@ static int provision_its_entries_run(void)
 				     entry->config.create_flags);
 		if (status != PSA_SUCCESS) {
 			LOG_ERR("Entry %s: ITS write failed (err %d)", entry->name, status);
-			mbedtls_platform_zeroize(payload, payload_len);
+			mbedtls_platform_zeroize(payload, sizeof(payload));
 			return -EIO;
 		}
 
 		LOG_INF("Entry %s: provisioned to ITS uid: 0x%08x", entry->name,
 			(unsigned int)entry->config.uid);
 
-		mbedtls_platform_zeroize(payload, payload_len);
+		mbedtls_platform_zeroize(payload, sizeof(payload));
 	}
 
 	return 0;
@@ -117,14 +117,14 @@ static int provision_kmu_entries_run(void)
 					    &payload_len);
 		if (err != 0) {
 			LOG_ERR("Entry %s: invalid payload (err %d)", entry->name, err);
-			mbedtls_platform_zeroize(payload, payload_len);
+			mbedtls_platform_zeroize(payload, sizeof(payload));
 			return err;
 		}
 
 		if (payload_len != (entry->config.key_bits / CHAR_BIT)) {
 			LOG_ERR("Entry %s: decoded length %zu does not match key size %zu bits",
 				entry->name, payload_len, entry->config.key_bits);
-			mbedtls_platform_zeroize(payload, payload_len);
+			mbedtls_platform_zeroize(payload, sizeof(payload));
 			return -EINVAL;
 		}
 
@@ -139,7 +139,7 @@ static int provision_kmu_entries_run(void)
 		psa_reset_key_attributes(&attr);
 		if (status != PSA_SUCCESS) {
 			LOG_ERR("Entry %s: KMU import failed (err %d)", entry->name, status);
-			mbedtls_platform_zeroize(payload, payload_len);
+			mbedtls_platform_zeroize(payload, sizeof(payload));
 			return -EIO;
 		}
 
@@ -147,13 +147,13 @@ static int provision_kmu_entries_run(void)
 		if (status != PSA_SUCCESS) {
 			LOG_ERR("Entry %s: KMU psa_purge_key failed (err: %d)", entry->name,
 				status);
-			mbedtls_platform_zeroize(payload, payload_len);
+			mbedtls_platform_zeroize(payload, sizeof(payload));
 			return -ECANCELED;
 		}
 
 		LOG_INF("Entry %s: provisioned to KMU id: %u", entry->name, entry->config.id);
 
-		mbedtls_platform_zeroize(payload, payload_len);
+		mbedtls_platform_zeroize(payload, sizeof(payload));
 	}
 
 	return 0;

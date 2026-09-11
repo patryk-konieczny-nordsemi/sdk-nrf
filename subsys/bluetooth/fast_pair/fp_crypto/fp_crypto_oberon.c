@@ -85,7 +85,7 @@ int fp_crypto_ecdh_shared_secret(uint8_t *secret_key,
 {
 	int ret;
 
-	ret = ocrypto_ecdh_p256_common_secret(secret_key, (uint8_t *)private_key, public_key);
+	ret = ocrypto_ecdh_p256_common_secret(secret_key, (const uint8_t *)private_key, public_key);
 	if (ret) {
 		LOG_ERR("ecdh: ocrypto_ecdh_p256_common_secret failed:"
 			" invalid private or public key");
