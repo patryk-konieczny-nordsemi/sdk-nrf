@@ -148,13 +148,15 @@ int fp_crypto_aes256_ecb_decrypt(uint8_t *out, const uint8_t *in, const uint8_t 
  * Keys are assumed to be secp256r1 elliptic curve keys.
  *
  * @param[out] secret_key 256-bit (32-byte) buffer to receive shared secret key.
- * @param[in] public_key 512-bit (64-byte) someone else's public key.
- * @param[in] private_key 256-bit (32-byte) your private key.
+ * @param[in] public_key 512-bit (64-byte) peer public key.
+ * @param[in] private_key Anti-spoofing private key: a 256-bit (32-byte) raw key, or a pointer to
+ *		a PSA key identifier (psa_key_id_t) when @ref CONFIG_BT_FAST_PAIR_CRYPTO_PSA
+ *		and @ref CONFIG_BT_FAST_PAIR_PROVISION_SECURE_STORAGE are both enabled.
  *
  * @return 0 If the operation was successful. Otherwise, a (negative) error code is returned.
  */
 int fp_crypto_ecdh_shared_secret(uint8_t *secret_key, const uint8_t *public_key,
-				 const uint8_t *private_key);
+				 const void *private_key);
 
 /** Calculate a point on the secp160r1 elliptic curve.
  *
