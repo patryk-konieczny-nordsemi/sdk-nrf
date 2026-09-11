@@ -162,7 +162,7 @@ config BT_FAST_PAIR_PROVISION_PARTITION
 
 config BT_FAST_PAIR_PROVISION_SECURE_STORAGE
 	bool "Provision Fast Pair data into KMU and Internal Trusted Storage [EXPERIMENTAL]"
-	depends on BT_FAST_PAIR_CRYPTO_PSA
+	depends on BT_FAST_PAIR_CRYPTO_PSA || BT_FAST_PAIR_CRYPTO_CUSTOM
 	select EXPERIMENTAL
 	help
 	  Source the Fast Pair provisioning data from hardware-protected storage
@@ -174,7 +174,7 @@ config BT_FAST_PAIR_PROVISION_SECURE_STORAGE
 	  Credentials must be written by a runtime provisioner image before
 	  the main application runs.
 	  This feature is only supported on the non-secure (TF-M) build with the
-	  PSA crypto backend.
+	  PSA or Custom crypto backend.
 
 endchoice
 
