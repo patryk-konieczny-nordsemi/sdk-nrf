@@ -42,4 +42,5 @@ rsource "dult/Kconfig"
 rsource "nrf_compress/Kconfig"
 rsource "mcuboot_ids/Kconfig"
 rsource "settings/Kconfig"
+rsource "provisioner/Kconfig"
 endmenu
