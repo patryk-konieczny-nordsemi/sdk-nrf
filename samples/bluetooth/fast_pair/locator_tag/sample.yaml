@@ -39,6 +39,7 @@ tests:
       - nrf54ls05dk/nrf54ls05b/cpuapp
       - thingy53/nrf5340/cpuapp
       - thingy53/nrf5340/cpuapp/ns
+
   sample.bluetooth.fast_pair.locator_tag.release:
     sysbuild: true
     build_only: true
@@ -71,3 +72,23 @@ tests:
       - thingy53/nrf5340/cpuapp
       - thingy53/nrf5340/cpuapp/ns
     extra_args: FILE_SUFFIX=release
+
+  sample.bluetooth.fast_pair.locator_tag.ns.tfm:
+    sysbuild: true
+    build_only: true
+    integration_platforms:
+      - nrf54l15dk/nrf54l15/cpuapp/ns
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp/ns
+    extra_args:
+      - FILE_SUFFIX=tfm
+
+  sample.bluetooth.fast_pair.locator_tag.ns.tfm_provisioner:
+    sysbuild: true
+    build_only: true
+    integration_platforms:
+      - nrf54l15dk/nrf54l15/cpuapp/ns
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp/ns
+    extra_args:
+      - FILE_SUFFIX=tfm_provisioner
