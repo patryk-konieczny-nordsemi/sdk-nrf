@@ -28,6 +28,7 @@ if(CONFIG_TFM_IPC AND CONFIG_BUILD_WITH_TFM AND CONFIG_BT_FAST_PAIR_FHN_STATE)
 
   set(EIK_SECURE_PARTITION_YAML
     ${CMAKE_CURRENT_BINARY_DIR}/eik_secure_partition/tfm_eik_secure_partition.yaml)
+
   set(EIK_SECURE_PARTITION_TFM_OUT
     ${CMAKE_BINARY_DIR}/tfm/eik_secure_partition)
 

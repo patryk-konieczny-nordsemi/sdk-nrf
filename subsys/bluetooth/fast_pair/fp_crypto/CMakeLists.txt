@@ -18,8 +18,8 @@ if(CONFIG_BT_FAST_PAIR_CRYPTO_OBERON)
 endif()
 if(CONFIG_BT_FAST_PAIR_CRYPTO_PSA)
   target_sources(fp_crypto PRIVATE fp_crypto_psa.c)
-  # The SECP160R1/SECP256R1 scalar operations are provided by ocrypto directly,
-  # so no dedicated crypto secure partition is needed.
+  
+  # The SECP160R1/SECP256R1 scalar operations are provided by ocrypto directly.
   target_link_libraries(fp_crypto PRIVATE nrfxlib_crypto)
 endif()
 
