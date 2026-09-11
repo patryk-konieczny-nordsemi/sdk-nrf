@@ -275,6 +275,7 @@ int fp_crypto_ecdh_shared_secret(uint8_t *secret_key, const uint8_t *public_key,
 		status = psa_destroy_key(priv_key_id);
 	}
 
+	/* Overwrite error code to forward information about psa destroy/purge key failure. */
 	if (status != PSA_SUCCESS) {
 		LOG_ERR("%s failed (err: %d)",
 			IS_ENABLED(CONFIG_BT_FAST_PAIR_PROVISION_SECURE_STORAGE) ? "psa_purge_key" :
