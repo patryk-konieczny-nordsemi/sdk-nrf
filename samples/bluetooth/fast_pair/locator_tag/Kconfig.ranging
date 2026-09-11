@@ -14,6 +14,7 @@ config APP_RANGING
 	select BT_RAS_RRSP
 	imply BT_TRANSMIT_POWER_CONTROL
 	depends on HAS_HW_NRF_RADIO_CS
+	depends on BT_FAST_PAIR_FHN
 	help
 	  Enable the application ranging using the Precision Finding feature
 	  for the Find Hub Network (FHN) extension.
