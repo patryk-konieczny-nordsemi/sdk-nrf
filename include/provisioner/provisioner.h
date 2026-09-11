@@ -7,9 +7,14 @@
 #ifndef PROVISIONER_H_
 #define PROVISIONER_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <stddef.h>
+#include <stdint.h>
+
+#include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/util.h>
+
+#include <psa/crypto.h>
+#include <psa/storage_common.h>
 
 /**
  * @file provisioner.h
@@ -23,14 +28,9 @@ extern "C" {
  * to write data to PSA ITS or CRACEN KMU.
  */
 
-#include <stddef.h>
-#include <stdint.h>
-
-#include <zephyr/sys/iterable_sections.h>
-#include <zephyr/sys/util.h>
-
-#include <psa/crypto.h>
-#include <psa/storage_common.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** @brief Source data encoding for a provision entry. */
 enum provisioner_data_format {
@@ -170,10 +170,12 @@ struct provisioner_kmu_entry {
  */
 int provisioner_run(void);
 
-/** @} */
-
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* PROVISIONER_H_ */
