@@ -51,3 +51,48 @@ tests:
       - ci_samples_bluetooth
     extra_args:
       - SB_CONFIG_PARTITION_MANAGER=y
+
+  sample.bluetooth.fast_pair.input_device.ns.provisioner:
+    build_only: true
+    sysbuild: true
+    integration_platforms:
+      - nrf54l15dk/nrf54l15/cpuapp/ns
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp/ns
+    tags:
+      - bluetooth
+      - ci_build
+      - sysbuild
+      - ci_samples_bluetooth
+    extra_args:
+      - FILE_SUFFIX=provisioner
+
+  sample.bluetooth.fast_pair.input_device.ns.mcuboot:
+    build_only: true
+    sysbuild: true
+    integration_platforms:
+      - nrf54l15dk/nrf54l15/cpuapp/ns
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp/ns
+    tags:
+      - bluetooth
+      - ci_build
+      - sysbuild
+      - ci_samples_bluetooth
+    extra_args:
+      - FILE_SUFFIX=mcuboot
+
+  sample.bluetooth.fast_pair.input_device.ns.mcuboot_provisioner:
+    build_only: true
+    sysbuild: true
+    integration_platforms:
+      - nrf54l15dk/nrf54l15/cpuapp/ns
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp/ns
+    tags:
+      - bluetooth
+      - ci_build
+      - sysbuild
+      - ci_samples_bluetooth
+    extra_args:
+      - FILE_SUFFIX=mcuboot_provisioner
