@@ -50,7 +50,6 @@ BUILD_ASSERT(FP_END_OFF <= FP_PARTITION_SIZE, "Fast Pair registration data parti
 
 static bool is_enabled;
 
-
 int fp_reg_data_get_model_id(uint8_t *buf, size_t size)
 {
 	__ASSERT_NO_MSG(is_enabled);
