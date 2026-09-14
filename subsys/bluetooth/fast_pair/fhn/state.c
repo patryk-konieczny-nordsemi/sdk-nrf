@@ -27,11 +27,11 @@ LOG_MODULE_REGISTER(fp_fhn_state, CONFIG_BT_FAST_PAIR_LOG_LEVEL);
 #include "fp_fhn_callbacks.h"
 #include "fp_fhn_clock.h"
 #include "fp_fhn_state.h"
-#include "fp_crypto.h"
-#include "fp_storage_eik.h"
+#include "fp_fhn_eik_operations.h"
 
 #include "dult.h"
 #include "fp_fhn_dult_integration.h"
+#include "fp_fhn_lengths.h"
 
 /* Byte length and offset of fields used to generate the FHN frame. */
 #define FHN_FRAME_UUID_LEN            2
@@ -40,7 +40,7 @@ LOG_MODULE_REGISTER(fp_fhn_state, CONFIG_BT_FAST_PAIR_LOG_LEVEL);
 #define FHN_FRAME_EID_OFFSET          (FHN_FRAME_TYPE_OFFSET + FHN_FRAME_TYPE_LEN)
 #define FHN_FRAME_EID_LEN             FP_FHN_STATE_EID_LEN
 #define FHN_FRAME_HASHED_FLAGS_OFFSET (FHN_FRAME_EID_OFFSET + FHN_FRAME_EID_LEN)
-#define FHN_FRAME_HASHED_FLAGS_LEN    1
+#define FHN_FRAME_HASHED_FLAGS_LEN    FP_FHN_FRAME_HASHED_FLAGS_XOR_LEN
 #define FHN_FRAME_PAYLOAD_LEN \
 	(FHN_FRAME_HASHED_FLAGS_OFFSET + FHN_FRAME_HASHED_FLAGS_LEN)
 
@@ -56,15 +56,6 @@ LOG_MODULE_REGISTER(fp_fhn_state, CONFIG_BT_FAST_PAIR_LOG_LEVEL);
 /* FHN Frame type with Unwanted Tracking Protection Mode indication. */
 #define FHN_FRAME_TYPE_UTP_MODE_OFF 0x40
 #define FHN_FRAME_TYPE_UTP_MODE_ON  0x41
-
-/* Byte length and offset of fields used to generate a seed for Ephemeral Identifier. */
-#define FHN_EID_SEED_PADDING_LEN        11
-#define FHN_EID_SEED_ROT_PERIOD_EXP_LEN 1
-#define FHN_EID_SEED_FHN_CLOCK_LEN     sizeof(uint32_t)
-#define FHN_EID_SEED_LEN                    \
-	((FHN_EID_SEED_PADDING_LEN +        \
-	  FHN_EID_SEED_ROT_PERIOD_EXP_LEN + \
-	  FHN_EID_SEED_FHN_CLOCK_LEN) * 2)
 
 /* Constants used to generate a seed for Ephemeral Identifier. */
 #define FHN_EID_SEED_ROT_PERIOD_EXP   10
@@ -98,17 +89,8 @@ enum utp_control_flags_bit_num {
 	UTP_CONTROL_FLAGS_BIT_NUM_RING_AUTH_SKIP = 0,
 };
 
-/* Verify if the length of the EIK is consistent with the storage module. */
-BUILD_ASSERT(FP_FHN_STATE_EIK_LEN == FP_STORAGE_EIK_LEN);
-
 /* Reserve at least two connection slots for FHN connections and advertising. */
 BUILD_ASSERT(CONFIG_BT_MAX_CONN > FHN_MAX_CONN);
-
-/* Validate the Elliptic Curve configuration. */
-BUILD_ASSERT(IS_ENABLED(CONFIG_BT_FAST_PAIR_FHN_ECC_SECP256R1) ||
-	     IS_ENABLED(CONFIG_BT_FAST_PAIR_FHN_ECC_SECP160R1));
-BUILD_ASSERT((SECP_MOD_RES_LEN == FP_CRYPTO_ECC_SECP160R1_MOD_LEN) ||
-	     (SECP_MOD_RES_LEN == FP_CRYPTO_ECC_SECP256R1_MOD_LEN));
 
 static uint8_t fhn_frame_payload[FHN_FRAME_PAYLOAD_LEN] = {
 	BT_UUID_16_ENCODE(FHN_FRAME_UUID), FHN_FRAME_TYPE_UTP_MODE_OFF,
@@ -159,7 +141,7 @@ static void eid_seed_half_encode(struct net_buf_simple *buf,
 				 uint8_t padding_pattern,
 				 uint32_t fhn_clock)
 {
-	uint8_t padding[FHN_EID_SEED_PADDING_LEN];
+	uint8_t padding[FP_FHN_EID_SEED_PADDING_LEN];
 
 	memset(padding, padding_pattern, sizeof(padding));
 
@@ -172,13 +154,9 @@ static int eid_encode(void)
 {
 	int err;
 	uint32_t fhn_clock;
-	uint8_t eik[FP_STORAGE_EIK_LEN];
-	uint8_t encrypted_eid_seed[FP_CRYPTO_AES256_BLOCK_LEN];
 	const uint8_t uninitialized_eid[FP_FHN_STATE_EID_LEN] = {};
-	uint8_t secp_mod_res[SECP_MOD_RES_LEN];
-	uint8_t mod_res_hash[FP_CRYPTO_SHA256_HASH_LEN];
 
-	NET_BUF_SIMPLE_DEFINE(eid_seed_buf, FHN_EID_SEED_LEN);
+	NET_BUF_SIMPLE_DEFINE(eid_seed_buf, FP_FHN_EID_SEED_LEN);
 
 	/* Prepare the FHN Clock value. */
 	fhn_clock = fp_fhn_clock_read();
@@ -204,69 +182,14 @@ static int eid_encode(void)
 			     FHN_EID_SEED_PADDING_TYPE_TWO,
 			     fhn_clock);
 
-	/* Load the EIK. */
-	err = fp_storage_eik_get(eik);
+	/* Encode the EID. */
+	err = fp_fhn_eik_eid_encode(eid_seed_buf.data, fhn_eid,
+				    &fhn_frame_hashed_flags_xor_operand);
 	if (err) {
-		LOG_ERR("FHN State: fp_storage_eik_get failed: %d", err);
+		LOG_ERR("FHN State: EID encode failed: %d", err);
 
 		return err;
 	}
-
-	LOG_HEXDUMP_DBG(eid_seed_buf.data, eid_seed_buf.len, "EID seed data:");
-	LOG_HEXDUMP_DBG(eik, sizeof(eik), "EIK:");
-
-	/* Encrypt the EID seed data with the Ephemeral Identity Key
-	 * using the AES-ECB-256 scheme.
-	 */
-	err = fp_crypto_aes256_ecb_encrypt(encrypted_eid_seed, eid_seed_buf.data, eik);
-	if (err) {
-		LOG_ERR("FHN State: EID seed data encryption failed: %d", err);
-
-		return err;
-	}
-
-	LOG_HEXDUMP_DBG(encrypted_eid_seed,
-			sizeof(encrypted_eid_seed),
-			"Encrypted EID seed data:");
-
-	/* Calculate the EID as the x coordinate of a point on the elliptic curve. */
-	if (IS_ENABLED(CONFIG_BT_FAST_PAIR_FHN_ECC_SECP160R1)) {
-		err = fp_crypto_ecc_secp160r1_calculate(fhn_eid,
-							secp_mod_res,
-							encrypted_eid_seed,
-							sizeof(encrypted_eid_seed));
-		if (err) {
-			LOG_ERR("FHN State: EID calculation using secp160r1 failed: %d",
-				err);
-
-			return err;
-		}
-	} else if (IS_ENABLED(CONFIG_BT_FAST_PAIR_FHN_ECC_SECP256R1)) {
-		err = fp_crypto_ecc_secp256r1_calculate(fhn_eid,
-							secp_mod_res,
-							encrypted_eid_seed,
-							sizeof(encrypted_eid_seed));
-		if (err) {
-			LOG_ERR("FHN State: EID calculation using secp256r1 failed: %d",
-				err);
-
-			return err;
-		}
-	} else {
-		__ASSERT(0, "ECC selection not supported");
-	}
-
-	LOG_HEXDUMP_DBG(fhn_eid, FP_FHN_STATE_EID_LEN, "EID:");
-
-	/* Calculate the XOR operand for the Hashed Flags bitmask. */
-	err = fp_crypto_sha256(mod_res_hash, secp_mod_res, sizeof(secp_mod_res));
-	if (err) {
-		LOG_ERR("FHN State: secp modulo result hashing failed: %d", err);
-
-		return err;
-	}
-
-	fhn_frame_hashed_flags_xor_operand = mod_res_hash[sizeof(mod_res_hash) - 1];
 
 	return 0;
 }
@@ -889,26 +812,6 @@ int fp_fhn_state_eid_read(uint8_t *eid)
 	return 0;
 }
 
-int fp_fhn_state_eik_read(uint8_t *eik)
-{
-	int err;
-
-	__ASSERT_NO_MSG(bt_fast_pair_is_ready());
-
-	if (!bt_fast_pair_fhn_is_provisioned()) {
-		return -EINVAL;
-	}
-
-	err = fp_storage_eik_get(eik);
-	if (err) {
-		LOG_ERR("FHN State: fp_storage_eik_get failed: %d", err);
-
-		return err;
-	}
-
-	return 0;
-}
-
 uint8_t fp_fhn_state_ecc_type_encode(void)
 {
 	/* Define the encoding for the ECC configuration. */
@@ -959,7 +862,7 @@ bool bt_fast_pair_fhn_is_provisioned(void)
 		return false;
 	}
 
-	ret = fp_storage_eik_is_provisioned();
+	ret = fp_fhn_eik_is_provisioned();
 	__ASSERT_NO_MSG(ret >= 0);
 
 	return (ret > 0);
@@ -1000,9 +903,9 @@ static int fhn_storage_unprovision(void)
 {
 	int err;
 
-	err = fp_storage_eik_delete();
+	err = fp_fhn_eik_delete();
 	if (err) {
-		LOG_ERR("FHN State: fp_storage_eik_delete failed: %d", err);
+		LOG_ERR("FHN State: fp_fhn_eik_delete failed: %d", err);
 		return err;
 	}
 
@@ -1041,13 +944,14 @@ static int fhn_unprovision(void)
 	return 0;
 }
 
-static int fhn_storage_provision(const uint8_t *eik)
+
+static int fhn_storage_provision(const uint8_t *encrypted_eik, const uint8_t *account_key)
 {
 	int err;
 
-	err = fp_storage_eik_save(eik);
+	err = fp_fhn_eik_provision_encrypted(encrypted_eik, account_key);
 	if (err) {
-		LOG_ERR("FHN State: fp_storage_eik_save failed: %d", err);
+		LOG_ERR("FHN State: fp_fhn_eik_provision_encrypted failed: %d", err);
 		return err;
 	}
 
@@ -1055,6 +959,7 @@ static int fhn_storage_provision(const uint8_t *eik)
 
 	return 0;
 }
+
 
 static int fhn_reprovision(void)
 {
@@ -1112,15 +1017,14 @@ static int fhn_new_provision(void)
 	return 0;
 }
 
-static int fhn_provision(const uint8_t *eik)
+static int fhn_provision(const uint8_t *encrypted_eik, const uint8_t *account_key)
 {
 	int err;
 	bool was_provisioned = bt_fast_pair_fhn_is_provisioned();
 
-	__ASSERT_NO_MSG(eik);
+	__ASSERT_NO_MSG(encrypted_eik && account_key);
 
-	/* Refresh the existing EIK or store the new one. */
-	err = fhn_storage_provision(eik);
+	err = fhn_storage_provision(encrypted_eik, account_key);
 	if (err) {
 		LOG_ERR("FHN State: fhn_storage_provision failed: %d", err);
 		return err;
@@ -1133,15 +1037,16 @@ static int fhn_provision(const uint8_t *eik)
 	}
 }
 
-int fp_fhn_state_eik_provision(const uint8_t *eik)
+int fp_fhn_state_eik_provision(const uint8_t *encrypted_eik, const uint8_t *account_key)
 {
 	__ASSERT_NO_MSG(bt_fast_pair_is_ready());
+	return fhn_provision(encrypted_eik, account_key);
+}
 
-	if (!eik) {
-		return fhn_unprovision();
-	} else {
-		return fhn_provision(eik);
-	}
+int fp_fhn_state_eik_unprovision(void)
+{
+	__ASSERT_NO_MSG(bt_fast_pair_is_ready());
+	return fhn_unprovision();
 }
 
 int bt_fast_pair_fhn_adv_param_set(
