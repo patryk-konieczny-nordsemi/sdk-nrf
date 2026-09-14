@@ -9,9 +9,11 @@
 #include <psa/crypto.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-LOG_MODULE_DECLARE(fp_crypto, CONFIG_FP_CRYPTO_LOG_LEVEL);
 
 #include "fp_crypto.h"
+
+/* LOG_MODULE_DECLARE is a no-op in SPE (tfm_boards zephyr/logging/log.h stub). */
+LOG_MODULE_DECLARE(fp_crypto, CONFIG_FP_CRYPTO_LOG_LEVEL);
 
 int fp_crypto_sha256(uint8_t *out, const uint8_t *in, size_t data_len)
 {
@@ -286,6 +288,11 @@ int fp_crypto_ecdh_shared_secret(uint8_t *secret_key, const uint8_t *public_key,
 	return err;
 }
 
+/* SYS_INIT() and k_panic() are Zephyr kernel APIs that are not available in the SPE.
+ * In the secure partition, PSA crypto is initialized by the TF-M framework (the
+ * partition declares a TFM_CRYPTO dependency), so no manual init is needed there.
+ */
+#ifndef FP_CRYPTO_SPE
 static int fp_crypto_psa_init(void)
 {
 	psa_status_t status = psa_crypto_init();
@@ -300,3 +307,4 @@ static int fp_crypto_psa_init(void)
 }
 
 SYS_INIT(fp_crypto_psa_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+#endif
