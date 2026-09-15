@@ -27,7 +27,7 @@ endif()
 if(CONFIG_BT_FAST_PAIR_STORAGE_FHN_CLOCK)
   target_sources(fp_storage PRIVATE fp_storage_clock.c)
 endif()
-if(CONFIG_BT_FAST_PAIR_STORAGE_FHN_EIK)
+if(CONFIG_BT_FAST_PAIR_STORAGE_FHN_EIK AND NOT BT_FAST_PAIR_FHN_EIK_SPE)
   target_sources(fp_storage PRIVATE fp_storage_eik.c)
 endif()
 
