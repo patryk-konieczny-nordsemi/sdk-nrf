@@ -4,12 +4,26 @@
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 #
 
+choice TEST_BT_FAST_PAIR_CRYPTO_BACKEND
+	prompt "Fast Pair crypto test backend"
+	optional
+	help
+	  Select the cryptographic backend configuration used by the test.
+	  Leave unset to use the Oberon backend from prj.conf.
+
 config TEST_BT_FAST_PAIR_CRYPTO_PSA
 	bool "Enable PSA backend and dependencies"
 	help
-	  The helper Kconfig option is used by the test to enable PSA backend
-	  and set proper TFM build profile. Used to avoid board-specific Kconfig
-	  overlays.
+	  Enable the PSA cryptographic backend for the test and pull in
+	  related dependencies. Used to avoid board-specific Kconfig overlays.
+
+config TEST_BT_FAST_PAIR_CRYPTO_CUSTOM
+	bool "Enable custom backend and dependencies"
+	help
+	  Enable the custom (TFM + Oberon) cryptographic backend for the test and
+	  pull in related dependencies. Used to avoid board-specific Kconfig overlays.
+
+endchoice
 
 if TEST_BT_FAST_PAIR_CRYPTO_PSA
 
@@ -18,6 +32,14 @@ choice BT_FAST_PAIR_CRYPTO_BACKEND
 endchoice
 
 endif # TEST_BT_FAST_PAIR_CRYPTO_PSA
+
+if TEST_BT_FAST_PAIR_CRYPTO_CUSTOM
+
+choice BT_FAST_PAIR_CRYPTO_BACKEND
+	default BT_FAST_PAIR_CRYPTO_CUSTOM
+endchoice
+
+endif # TEST_BT_FAST_PAIR_CRYPTO_CUSTOM
 
 menu "Test configuration"
 source "$(ZEPHYR_NRF_MODULE_DIR)/subsys/bluetooth/fast_pair/fp_crypto/Kconfig.fp_crypto"
