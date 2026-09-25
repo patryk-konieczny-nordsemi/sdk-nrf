@@ -1,0 +1,58 @@
+#
+# Copyright (c) 2026 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+#
+
+menu "FHN crypto"
+
+choice BT_FAST_PAIR_FHN_ECC_TYPE
+	prompt "Elliptic Curve selection"
+	default BT_FAST_PAIR_FHN_ECC_SECP160R1
+	help
+	  Select the elliptic curve used for FHN Ephemeral Identifier (EID)
+	  encoding and related cryptographic operations across FHN modules.
+
+config BT_FAST_PAIR_FHN_ECC_SECP160R1
+	bool "FHN with the SECP160R1 Elliptic Curve"
+	depends on BT_FAST_PAIR_CRYPTO_SECP160R1_SUPPORT
+	help
+	  Select the SECP160R1 elliptic curve. This curve type is less secure
+	  than the SECP256R1 variant, but it can be used with Bluetooth Legacy
+	  Advertising because of its limited size (160 bits).
+
+config BT_FAST_PAIR_FHN_ECC_SECP256R1
+	bool "FHN with the SECP256R1 Elliptic Curve"
+	depends on BT_FAST_PAIR_CRYPTO_SECP256R1_SUPPORT
+	help
+	  Select the SECP256R1 elliptic curve. This curve type is more secure
+	  than the SECP160R1 variant but requires Bluetooth Extended Advertising
+	  due to its extended size (256 bits).
+
+endchoice
+
+config BT_FAST_PAIR_FHN_ECC_LEN
+	int
+	depends on BT_FAST_PAIR_FHN_ECC_SECP160R1 || BT_FAST_PAIR_FHN_ECC_SECP256R1
+	default 20 if BT_FAST_PAIR_FHN_ECC_SECP160R1
+	default 32 if BT_FAST_PAIR_FHN_ECC_SECP256R1
+	help
+	  Byte length of the chosen elliptic curve (EID length in FHN frames).
+
+config BT_FAST_PAIR_FHN_CRYPTO
+	bool
+	default y
+	depends on BT_FAST_PAIR_CRYPTO_AES256_ECB_SUPPORT
+	depends on BT_FAST_PAIR_FHN_ECC_SECP160R1 || BT_FAST_PAIR_FHN_ECC_SECP256R1
+	help
+	  Enable FHN use of Fast Pair crypto (AES-256-ECB and ECC). Selected
+	  automatically by BT_FAST_PAIR_FHN when the full extension is enabled.
+
+config BT_FAST_PAIR_FHN_RANDOM_NONCE_LEN
+	int "Random nonce length for Beacon Actions [bytes]"
+	default 8
+	help
+	  Byte length of the random nonce used in Beacon Actions authentication
+	  and EIK hash comparison.
+
+endmenu

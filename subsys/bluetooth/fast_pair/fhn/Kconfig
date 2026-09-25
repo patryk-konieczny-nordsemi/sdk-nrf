@@ -15,6 +15,9 @@ menuconfig BT_FAST_PAIR_FHN
 
 if BT_FAST_PAIR_FHN
 
+rsource "Kconfig.fhn_crypto"
+rsource "Kconfig.eik"
+
 rsource "pf/Kconfig"
 
 config BT_FAST_PAIR_FHN_TX_POWER
@@ -61,52 +64,6 @@ config BT_FAST_PAIR_FHN_MAX_CONN
 	  In the typical locator tag use case, the BT_MAX_CONN configuration should
 	  be greater than the BT_FAST_PAIR_FHN_MAX_CONN configuration to provide
 	  also connection slots for the standard Fast Pair advertising set.
-
-choice BT_FAST_PAIR_FHN_ECC_TYPE
-	prompt "Elliptic Curve selection"
-	default BT_FAST_PAIR_FHN_ECC_SECP160R1
-	help
-	  Select the Elliptic Curve used for encryption in FHN modules.
-
-config BT_FAST_PAIR_FHN_ECC_SECP160R1
-	bool "FHN with the SECP160R1 Elliptic Curve"
-	depends on BT_FAST_PAIR_CRYPTO_SECP160R1_SUPPORT
-	help
-	  Select the SECP160R1 Elliptic Curve for FHN. This curve type
-	  is less secure than the SECP256R1 variant, but it can be used with
-	  Bluetooth Legacy Advertising because of its limited size (160 bits).
-
-config BT_FAST_PAIR_FHN_ECC_SECP256R1
-	bool "FHN with the SECP256R1 Elliptic Curve"
-	depends on BT_FAST_PAIR_CRYPTO_SECP256R1_SUPPORT
-	help
-	  Select the SECP256R1 Elliptic Curve for FHN. This curve type
-	  is more secure than the SECP160R1 variant but requires using
-	  Bluetooth Extended Advertising due to its extended size (256 bits).
-
-endchoice
-
-config BT_FAST_PAIR_FHN_ECC_LEN
-	int
-	depends on BT_FAST_PAIR_FHN_ECC_SECP160R1 || BT_FAST_PAIR_FHN_ECC_SECP256R1
-	default 20 if BT_FAST_PAIR_FHN_ECC_SECP160R1
-	default 32 if BT_FAST_PAIR_FHN_ECC_SECP256R1
-	help
-	  Indicate the byte length of the chosen Elliptic Curve type.
-
-config BT_FAST_PAIR_FHN_CRYPTO
-	bool
-	depends on BT_FAST_PAIR_CRYPTO_AES256_ECB_SUPPORT
-	depends on BT_FAST_PAIR_FHN_ECC_SECP160R1 || BT_FAST_PAIR_FHN_ECC_SECP256R1
-	help
-	  Declare the list of FHN dependencies on the Fast Pair crypto operations.
-
-config BT_FAST_PAIR_FHN_RANDOM_NONCE_LEN
-	int
-	default 8
-	help
-	  Indicate the byte length of the random nonce used to generate
-	  Beacon Actions requests and responses.
 
 config BT_FAST_PAIR_FHN_AUTH_SEG_LEN
 	int
@@ -409,8 +366,9 @@ endif # BT_FAST_PAIR_FHN_RING
 config BT_FAST_PAIR_FHN_STATE
 	bool
 	default y
+	depends on BT_FAST_PAIR_FHN_EIK
 	select BT_EXT_ADV
-	select BT_FAST_PAIR_STORAGE_FHN_EIK
+	select BT_FAST_PAIR_STORAGE_FHN_EIK if !BT_FAST_PAIR_FHN_EIK_SPE
 	help
 	  Add Fast Pair FHN State source file.
 
