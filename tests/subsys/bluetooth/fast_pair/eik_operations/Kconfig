@@ -1,0 +1,81 @@
+#
+# Copyright (c) 2026 Nordic Semiconductor
+#
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+#
+
+choice TEST_BT_FAST_PAIR_CRYPTO_BACKEND
+	prompt "Fast Pair crypto test backend"
+	optional
+	help
+	  Select the cryptographic backend configuration used by the test.
+	  Leave unset to use the Oberon backend from prj.conf.
+
+config TEST_BT_FAST_PAIR_CRYPTO_PSA
+	bool "Enable PSA backend and dependencies"
+	help
+	  Enable the PSA cryptographic backend for the test and pull in
+	  related dependencies. Used to avoid board-specific Kconfig overlays.
+
+config TEST_BT_FAST_PAIR_CRYPTO_CUSTOM
+	bool "Enable custom crypto backend and dependencies"
+	help
+	  Enable the custom (TFM + Oberon) cryptographic backend for the test and
+	  pull in related dependencies. Used to avoid board-specific Kconfig overlays.
+
+endchoice
+
+if TEST_BT_FAST_PAIR_CRYPTO_PSA
+
+choice BT_FAST_PAIR_CRYPTO_BACKEND
+	default BT_FAST_PAIR_CRYPTO_PSA
+endchoice
+
+endif # TEST_BT_FAST_PAIR_CRYPTO_PSA
+
+if TEST_BT_FAST_PAIR_CRYPTO_CUSTOM
+
+choice BT_FAST_PAIR_CRYPTO_BACKEND
+	default BT_FAST_PAIR_CRYPTO_CUSTOM
+endchoice
+
+endif # TEST_BT_FAST_PAIR_CRYPTO_CUSTOM
+
+config TEST_BT_FAST_PAIR_EIK_SPE
+	bool "Use SPE/ITS EIK path instead of NS settings"
+	depends on BUILD_WITH_TFM
+	help
+	  Enable TF-M EIK secure partition path.
+
+config BT_FAST_PAIR_STORAGE_FHN_EIK
+	default y if !TEST_BT_FAST_PAIR_EIK_SPE
+
+config BT_FAST_PAIR_FHN_EIK_SPE
+	default TEST_BT_FAST_PAIR_EIK_SPE
+
+choice BT_FAST_PAIR_FHN_ECC_TYPE
+	default BT_FAST_PAIR_FHN_ECC_SECP256R1
+endchoice
+
+config BT_FAST_PAIR_FHN_EIK
+	bool
+	default y
+	help
+	  Enable FHN EIK operations in this unit test without the FHN State
+	  module or full Bluetooth integration.
+
+menu "Test configuration"
+source "$(ZEPHYR_NRF_MODULE_DIR)/subsys/bluetooth/fast_pair/fp_crypto/Kconfig.fp_crypto"
+source "$(ZEPHYR_NRF_MODULE_DIR)/subsys/bluetooth/fast_pair/fp_storage/Kconfig.fp_storage"
+rsource "$(ZEPHYR_NRF_MODULE_DIR)/subsys/bluetooth/fast_pair/fhn/Kconfig.fhn_crypto"
+rsource "$(ZEPHYR_NRF_MODULE_DIR)/subsys/bluetooth/fast_pair/fhn/Kconfig.eik"
+
+module = BT_FAST_PAIR
+module-str = Fast Pair
+source "$(ZEPHYR_BASE)/subsys/logging/Kconfig.template.log_config"
+
+endmenu
+
+menu "Zephyr"
+source "Kconfig.zephyr"
+endmenu
