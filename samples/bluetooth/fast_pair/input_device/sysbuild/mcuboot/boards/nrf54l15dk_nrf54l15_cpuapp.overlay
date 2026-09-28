@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+ */
+
+/*
+ * MCUboot image overlay.
+ * Reuses the application flash partition map, then boots from the MCUboot
+ * partition.
+ */
+#include "../../../boards/nrf54l15dk_nrf54l15_cpuapp_ns_mcuboot.overlay"
+
+/ {
+	chosen {
+		zephyr,code-partition = &boot_partition;
+	};
+};
