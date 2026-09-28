@@ -1,0 +1,54 @@
+#
+# Copyright (c) 2026 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+#
+
+menu "FHN Ephemeral Identity Key (EIK)"
+
+config BT_FAST_PAIR_FHN_EIK
+	bool
+	default y
+	depends on BT_FAST_PAIR_FHN_CRYPTO
+	help
+	  Enable FHN Ephemeral Identity Key (EIK) operations.
+
+config BT_FAST_PAIR_FHN_EIK_SPE
+	bool
+	default y
+	depends on BUILD_WITH_TFM
+	depends on TFM_IPC
+	depends on TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
+	depends on TFM_PARTITION_CRYPTO
+	depends on BT_FAST_PAIR_FHN_EIK
+	help
+	  Store the Ephemeral Identity Key (EIK) in the TF-M secure partition (ITS).
+	  Automatically enabled on TF-M builds that satisfy the dependencies.
+
+config BT_FAST_PAIR_FHN_EIK_ITS_ID
+	hex "PSA Internal Trusted Storage UID for the Ephemeral identity key"
+	depends on BT_FAST_PAIR_FHN_EIK_SPE
+	range 0x1 0xFFFEFFFF
+	default 0x30001
+	help
+	  PSA ITS UID for the 32-byte FHN Ephemeral Identity Key (EIK).
+
+if BT_FAST_PAIR_FHN_EIK_SPE
+
+choice BT_FAST_PAIR_FHN_EIK_SPE_LOG_LEVEL_CHOICE
+	default BT_FAST_PAIR_FHN_EIK_SPE_LOG_LEVEL_OFF if TFM_LOG_LEVEL_SILENCE
+	help
+	  Compile-time log level of the EIK secure partition.
+	  It applies to every source built into that partition, including the
+	  secure copy of the Fast Pair crypto backend. The non-secure build of
+	  shared sources keeps using its own Zephyr log level.
+	  The Default option uses the TF-M partition log level.
+endchoice
+
+module = BT_FAST_PAIR_FHN_EIK_SPE
+module-str = EIK secure partition
+source "$(ZEPHYR_BASE)/subsys/logging/Kconfig.template.log_config"
+
+endif # BT_FAST_PAIR_FHN_EIK_SPE
+
+endmenu
