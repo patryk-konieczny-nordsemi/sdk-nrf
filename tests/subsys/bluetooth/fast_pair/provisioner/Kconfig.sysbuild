@@ -1,0 +1,18 @@
+#
+# Copyright (c) 2026 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+#
+
+config PARTITION_MANAGER
+	default n
+
+config BT_FAST_PAIR_MODEL_ID
+	default 0x4A436B
+
+# The Anti-Spoofing Private Key is only used for testing purposes and must not be used in
+# production.
+config BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY
+	default "rie10A7ONqwd77VmkxGsblPUbMt384qjDgcEJ/ctT9Y="
+
+source "share/sysbuild/Kconfig"

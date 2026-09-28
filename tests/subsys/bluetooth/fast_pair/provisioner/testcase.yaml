@@ -1,0 +1,29 @@
+common:
+  sysbuild: true
+  tags:
+    - sysbuild
+    - bluetooth
+    - pytest
+    - ci_tests_subsys_bluetooth_fast_pair
+  platform_allow:
+    - nrf54l15dk/nrf54l15/cpuapp/ns
+  integration_platforms:
+    - nrf54l15dk/nrf54l15/cpuapp/ns
+tests:
+  fast_pair.provisioner.image:
+    build_only: true
+    extra_args:
+      - SB_CONFIG_BT_FAST_PAIR_RUNTIME_PROVISIONER=y
+  fast_pair.provisioner.app_prov:
+    build_only: true
+    extra_configs:
+      - CONFIG_TEST_BT_FAST_PAIR_PROVISIONED=y
+  fast_pair.provisioner.flow:
+    harness: pytest
+    timeout: 600
+    required_applications:
+      - name: fast_pair.provisioner.image
+      - name: fast_pair.provisioner.app_prov
+    harness_config:
+      pytest_root:
+        - "pytest/test_provisioner_flow.py"

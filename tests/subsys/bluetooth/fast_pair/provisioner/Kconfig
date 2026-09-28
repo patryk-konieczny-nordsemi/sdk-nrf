@@ -1,0 +1,28 @@
+#
+# Copyright (c) 2026 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+#
+
+menu "Test configuration"
+
+config TEST_BT_FAST_PAIR_APP
+	def_bool !BT_FAST_PAIR_RUNTIME_PROVISIONER
+	select ZTEST
+	help
+	  Set for the test application images (every image except the runtime
+	  provisioner). These images run ztest suites.
+
+config TEST_BT_FAST_PAIR_PROVISIONED
+	bool "Build the test suite for a provisioned device"
+	depends on TEST_BT_FAST_PAIR_APP
+	help
+	  Build the ztest suite that expects the Fast Pair credentials to be
+	  present in the secure storage. When disabled, the test application
+	  runs the suite for an unprovisioned device.
+
+endmenu
+
+menu "Zephyr"
+source "Kconfig.zephyr"
+endmenu
