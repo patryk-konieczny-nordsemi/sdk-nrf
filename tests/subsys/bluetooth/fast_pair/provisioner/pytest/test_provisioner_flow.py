@@ -15,7 +15,7 @@ from twister_harness_ext.utils.helpers import run_command
 logger = logging.getLogger(__name__)
 
 PROVISIONER_SCENARIO = "fast_pair.provisioner.image"
-APP_PROV_SCENARIO = "fast_pair.provisioner.app_prov"
+APP_POST_PROV_SCENARIO = "fast_pair.provisioner.app_post_prov"
 
 PROVISIONER_DONE = r"FP_PROV_TEST: provisioner image done"
 ZTEST_DONE = r"PROJECT EXECUTION (SUCCESSFUL|FAILED)"
@@ -79,9 +79,9 @@ def _find_build_dir(required_build_dirs: list[str], scenario: str) -> Path:
 
 def test_provisioner_flow(unlaunched_dut: DeviceAdapter, required_build_dirs: list[str]):
     dut = unlaunched_dut
-    app_unprov = Path(dut.device_config.build_dir)
+    app_pre_prov = Path(dut.device_config.build_dir)
     provisioner = _find_build_dir(required_build_dirs, PROVISIONER_SCENARIO)
-    app_prov = _find_build_dir(required_build_dirs, APP_PROV_SCENARIO)
+    app_post_prov = _find_build_dir(required_build_dirs, APP_POST_PROV_SCENARIO)
 
     # Open the UART before the first flash, so no boot output is lost.
     dut.start_reader()
@@ -91,28 +91,39 @@ def test_provisioner_flow(unlaunched_dut: DeviceAdapter, required_build_dirs: li
 
     pipeline.step(
         "erase + unprovisioned app",
-        app_unprov,
+        app_pre_prov,
         ZTEST_DONE,
-        expect=["FP_PROV_TEST: unprovisioned app image started", "PROJECT EXECUTION SUCCESSFUL"],
+        expect=["PROJECT EXECUTION SUCCESSFUL"],
         recover=True,
     )
     pipeline.step(
         "provisioner (first run)",
         provisioner,
         PROVISIONER_DONE,
-        expect=["FP_PROV_TEST: provisioner image started"],
+        expect=[
+            "FP_PROV_TEST: provisioner image started",
+            "KMU provisioning finished - all entries OK",
+            "ITS provisioning finished - all entries OK",
+            "FP_PROV_TEST: provisioner image done : success"
+            ],
     )
     pipeline.step(
         "provisioned app",
-        app_prov,
+        app_post_prov,
         ZTEST_DONE,
-        expect=["FP_PROV_TEST: provisioned app image started", "PROJECT EXECUTION SUCCESSFUL"],
+        expect=["PROJECT EXECUTION SUCCESSFUL"],
     )
     pipeline.step(
         "provisioner (second run)",
         provisioner,
         PROVISIONER_DONE,
-        expect=["FP_PROV_TEST: provisioner image started"],
+        expect=[
+            "FP_PROV_TEST: provisioner image started",
+            "KMU provisioning failed (err: -17)",
+            "ITS provisioning finished - all entries OK",
+            "identical data already provisioned in ITS uid",
+            "FP_PROV_TEST: provisioner image done : error"
+            ],
     )
 
     assert pipeline.summary(), "Fast Pair provisioner flow failed, see the summary above"

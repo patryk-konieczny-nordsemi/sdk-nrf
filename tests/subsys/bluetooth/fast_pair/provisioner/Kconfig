@@ -21,6 +21,20 @@ config TEST_BT_FAST_PAIR_PROVISIONED
 	  present in the secure storage. When disabled, the test application
 	  runs the suite for an unprovisioned device.
 
+config TEST_BT_FAST_PAIR_EXPECTED_MODEL_ID
+	hex "Expected Fast Pair Model ID"
+	default 0x1000000
+	help
+	  Model ID the test expects in the secure storage.
+	  Set by sysbuild from SB_CONFIG_BT_FAST_PAIR_MODEL_ID.
+
+config TEST_BT_FAST_PAIR_EXPECTED_PUB_KEY
+	string "Expected Anti-Spoofing public key (hex)"
+	help
+	  Uncompressed secp256r1 public key (65 bytes, hex encoded) the test
+	  expects for the Anti-Spoofing key stored in the KMU.
+	  Set by sysbuild from SB_CONFIG_TEST_BT_FAST_PAIR_EXPECTED_PUB_KEY.
+
 endmenu
 
 menu "Zephyr"

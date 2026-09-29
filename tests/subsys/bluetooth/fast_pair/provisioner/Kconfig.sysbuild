@@ -7,12 +7,15 @@
 config PARTITION_MANAGER
 	default n
 
+# Random test vectors - not real Fast Pair credentials
 config BT_FAST_PAIR_MODEL_ID
-	default 0x4A436B
+	default 0xCAFE67
 
-# The Anti-Spoofing Private Key is only used for testing purposes and must not be used in
-# production.
 config BT_FAST_PAIR_ANTI_SPOOFING_PRIVATE_KEY
-	default "rie10A7ONqwd77VmkxGsblPUbMt384qjDgcEJ/ctT9Y="
+	default "LJL3a6185D+mWKEPSUEHKuM9mY1j5h3fJKWxP+qncU4="
+
+config TEST_BT_FAST_PAIR_EXPECTED_PUB_KEY
+	string "Expected Anti-Spoofing public key (hex)"
+	default "0484f89616513e8207fefcc483cb46686e54e2f8df8b720e8e42521a703f14644a7bd57d851a55b7da0798ca73728481bd3623c0b330b4f62719d16dd52d553b81"
 
 source "share/sysbuild/Kconfig"

@@ -17,7 +17,11 @@ int main(void)
 
 	err = provisioner_run();
 
-	printk("FP_PROV_TEST: provisioner image done (err %d)\n", err);
+	if (err != 0) {
+		printk("FP_PROV_TEST: provisioner image done : error %d\n", err);
+	} else {
+		printk("FP_PROV_TEST: provisioner image done : success\n");
+	}
 
 	return err;
 }
